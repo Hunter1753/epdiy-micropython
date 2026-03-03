@@ -58,7 +58,7 @@ index f5ca71b..fdff465 100644
 -    row_rmt_config.clk_div = 8;
 +    // 1. Create the RMT TX channel
 +    rmt_tx_channel_config_t tx_chan_config = {
-+        .clk_src = RMT_CLK_SRC_DEFAULT, 
++        .clk_src = RMT_CLK_SRC_DEFAULT,
 +        .gpio_num = pin,
 +        .mem_block_symbols = 128,          // Equivalent to mem_block_num = 2 (64 symbols * 2)
 +        .resolution_hz = 10000000,         // 10MHz clock -> 0.1us resolution (matches old clk_div = 8)
@@ -111,13 +111,13 @@ index f5ca71b..fdff465 100644
 +        // Wait for previous transmission to finish
 +    }
 +
-+    // Static buffer because rmt_transmit is asynchronous. 
++    // Static buffer because rmt_transmit is asynchronous.
 +    // The buffer must remain valid until the ISR finishes transmitting.
 +    static rmt_symbol_word_t symbol;
-+    
++
 +    // Clear the struct just in case
-+    symbol.val = 0; 
-+    
++    symbol.val = 0;
++
      if (high_time_ticks > 0) {
 -        rmt_mem_ptr->level0 = 1;
 -        rmt_mem_ptr->duration0 = high_time_ticks;
