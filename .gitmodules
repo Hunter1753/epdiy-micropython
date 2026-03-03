@@ -1,0 +1,6 @@
+[submodule "epdiy"]
+	path = epdiy
+	url = https://github.com/vroland/epdiy.git
+[submodule "micropython"]
+	path = micropython
+	url = https://github.com/micropython/micropython.git
