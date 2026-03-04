@@ -83,6 +83,8 @@ All drawing methods write to an in-memory framebuffer. Call `update()` or `updat
 | `epd.fill_rect(x, y, w, h, color)` | Draw a filled rectangle. |
 | `epd.circle(x, y, r, color)` | Draw a circle outline with radius `r` centred at `(x, y)`. |
 | `epd.fill_circle(x, y, r, color)` | Draw a filled circle. |
+| `epd.triangle(x0, y0, x1, y1, x2, y2, color)` | Draw a triangle outline between three vertices. |
+| `epd.fill_triangle(x0, y0, x1, y1, x2, y2, color)` | Draw a filled triangle. |
 | `epd.arc(x, y, r, start, end, color)` | Draw an arc outline of radius `r` centred at `(x, y)` from angle `start` to `end`. |
 | `epd.fill_arc(x, y, r, start, end, color)` | Draw a filled pie wedge (arc + two radii). |
 | `epd.write_text(x, y, text, size)` | Draw `text` using FiraSans at `(x, y)`. `size` must be `12` or `20` (raises `ValueError` otherwise). Uses the colors and alignment set by the methods below. |

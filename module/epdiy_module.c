@@ -252,6 +252,40 @@ static mp_obj_t epd_obj_fill_circle(size_t n_args, const mp_obj_t *args) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(epd_obj_fill_circle_obj, 5, 5, epd_obj_fill_circle);
 
+// ─── triangle(x0, y0, x1, y1, x2, y2, color) ─────────────────────────────────
+static mp_obj_t epd_obj_triangle(size_t n_args, const mp_obj_t *args) {
+    epd_obj_t *self = MP_OBJ_TO_PTR(args[0]);
+    EPD_CHECK_INIT(self);
+    int x0 = mp_obj_get_int(args[1]);
+    int y0 = mp_obj_get_int(args[2]);
+    int x1 = mp_obj_get_int(args[3]);
+    int y1 = mp_obj_get_int(args[4]);
+    int x2 = mp_obj_get_int(args[5]);
+    int y2 = mp_obj_get_int(args[6]);
+    uint8_t color = color_from_py(args[7]);
+    uint8_t *fb = epd_hl_get_framebuffer(&self->hl);
+    epd_draw_triangle(x0, y0, x1, y1, x2, y2, color, fb);
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(epd_obj_triangle_obj, 8, 8, epd_obj_triangle);
+
+// ─── fill_triangle(x0, y0, x1, y1, x2, y2, color) ────────────────────────────
+static mp_obj_t epd_obj_fill_triangle(size_t n_args, const mp_obj_t *args) {
+    epd_obj_t *self = MP_OBJ_TO_PTR(args[0]);
+    EPD_CHECK_INIT(self);
+    int x0 = mp_obj_get_int(args[1]);
+    int y0 = mp_obj_get_int(args[2]);
+    int x1 = mp_obj_get_int(args[3]);
+    int y1 = mp_obj_get_int(args[4]);
+    int x2 = mp_obj_get_int(args[5]);
+    int y2 = mp_obj_get_int(args[6]);
+    uint8_t color = color_from_py(args[7]);
+    uint8_t *fb = epd_hl_get_framebuffer(&self->hl);
+    epd_fill_triangle(x0, y0, x1, y1, x2, y2, color, fb);
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(epd_obj_fill_triangle_obj, 8, 8, epd_obj_fill_triangle);
+
 // ─── Angle helpers ────────────────────────────────────────────────────────────
 #ifndef M_PIf
 #define M_PIf 3.14159265f
@@ -604,6 +638,8 @@ static const mp_rom_map_elem_t epd_obj_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_fill_rect),   MP_ROM_PTR(&epd_obj_fill_rect_obj) },
     { MP_ROM_QSTR(MP_QSTR_circle),      MP_ROM_PTR(&epd_obj_circle_obj) },
     { MP_ROM_QSTR(MP_QSTR_fill_circle),      MP_ROM_PTR(&epd_obj_fill_circle_obj) },
+    { MP_ROM_QSTR(MP_QSTR_triangle),         MP_ROM_PTR(&epd_obj_triangle_obj) },
+    { MP_ROM_QSTR(MP_QSTR_fill_triangle),    MP_ROM_PTR(&epd_obj_fill_triangle_obj) },
     { MP_ROM_QSTR(MP_QSTR_arc),              MP_ROM_PTR(&epd_obj_arc_obj) },
     { MP_ROM_QSTR(MP_QSTR_fill_arc),         MP_ROM_PTR(&epd_obj_fill_arc_obj) },
     { MP_ROM_QSTR(MP_QSTR_set_text_color),   MP_ROM_PTR(&epd_obj_set_text_color_obj) },
