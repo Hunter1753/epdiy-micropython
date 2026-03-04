@@ -47,6 +47,10 @@ Colors are expressed as integers 0–15 (4-bit grayscale: 0 = black, 15 = white)
 | `epdiy.MONO_HMSB` | Framebuf format: 1 bpp (matches `framebuf.MONO_HMSB` = 4) |
 | `epdiy.GS2_HMSB` | Framebuf format: 2 bpp grayscale (matches `framebuf.GS2_HMSB` = 5) |
 | `epdiy.GS4_HMSB` | Framebuf format: 4 bpp grayscale (matches `framebuf.GS4_HMSB` = 2) |
+| `epdiy.ROT_LANDSCAPE` | Landscape orientation (default, 960×540) |
+| `epdiy.ROT_PORTRAIT` | Portrait orientation (540×960) |
+| `epdiy.ROT_INVERTED_LANDSCAPE` | Landscape, rotated 180° |
+| `epdiy.ROT_INVERTED_PORTRAIT` | Portrait, rotated 180° |
 
 ### `epdiy.EPD()`
 
@@ -84,6 +88,8 @@ All drawing methods write to an in-memory framebuffer. Call `update()` or `updat
 | `epd.set_text_align(flags)` | Set text alignment / background drawing flags. Pass one or more `epdiy.ALIGN_*` / `epdiy.DRAW_BACKGROUND` constants combined with `\|`. |
 | `epd.reset_text_props()` | Reset all font properties to defaults (black foreground, no background, left-aligned). |
 | `epd.draw_framebuf(buf, width, height, format, x, y)` | Blit a MicroPython framebuffer (or any buffer-protocol object) onto the display framebuffer at `(x, y)`. See below. |
+| `epd.set_rotation(rot)` | Set the display rotation. Pass one of the `epdiy.ROT_*` constants. Affects all subsequent drawing and font calls. |
+| `epd.get_rotation()` | Return the current rotation as an integer (one of the `epdiy.ROT_*` values). |
 
 #### `epd.draw_framebuf(buf, width, height, format, x, y)`
 

@@ -439,6 +439,22 @@ static mp_obj_t epd_obj_update(size_t n_args, const mp_obj_t *args) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(epd_obj_update_obj, 1, 2, epd_obj_update);
 
+// ─── set_rotation(rot) / get_rotation() ──────────────────────────────────────
+static mp_obj_t epd_obj_set_rotation(mp_obj_t self_in, mp_obj_t rot_in) {
+    epd_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    EPD_CHECK_INIT(self);
+    epd_set_rotation((enum EpdRotation)mp_obj_get_int(rot_in));
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(epd_obj_set_rotation_obj, epd_obj_set_rotation);
+
+static mp_obj_t epd_obj_get_rotation(mp_obj_t self_in) {
+    epd_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    EPD_CHECK_INIT(self);
+    return mp_obj_new_int(epd_get_rotation());
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(epd_obj_get_rotation_obj, epd_obj_get_rotation);
+
 // ─── update_area(x, y, w, h[, mode]) ─────────────────────────────────────────
 // Partial refresh of the given rectangle.
 // mode defaults to MODE_GL16. Must be called between poweron() and poweroff().
@@ -482,6 +498,8 @@ static const mp_rom_map_elem_t epd_obj_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_reset_text_props), MP_ROM_PTR(&epd_obj_reset_text_props_obj) },
     { MP_ROM_QSTR(MP_QSTR_write_text),       MP_ROM_PTR(&epd_obj_write_text_obj) },
     { MP_ROM_QSTR(MP_QSTR_draw_framebuf), MP_ROM_PTR(&epd_obj_draw_framebuf_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_rotation), MP_ROM_PTR(&epd_obj_set_rotation_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_rotation), MP_ROM_PTR(&epd_obj_get_rotation_obj) },
     { MP_ROM_QSTR(MP_QSTR_update),      MP_ROM_PTR(&epd_obj_update_obj) },
     { MP_ROM_QSTR(MP_QSTR_update_area), MP_ROM_PTR(&epd_obj_update_area_obj) },
 };
@@ -512,6 +530,11 @@ static const mp_rom_map_elem_t epdiy_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_ALIGN_LEFT),       MP_ROM_INT(EPD_DRAW_ALIGN_LEFT) },
     { MP_ROM_QSTR(MP_QSTR_ALIGN_RIGHT),      MP_ROM_INT(EPD_DRAW_ALIGN_RIGHT) },
     { MP_ROM_QSTR(MP_QSTR_ALIGN_CENTER),     MP_ROM_INT(EPD_DRAW_ALIGN_CENTER) },
+    // Rotation constants for set_rotation() / get_rotation()
+    { MP_ROM_QSTR(MP_QSTR_ROT_LANDSCAPE),          MP_ROM_INT(EPD_ROT_LANDSCAPE) },
+    { MP_ROM_QSTR(MP_QSTR_ROT_PORTRAIT),           MP_ROM_INT(EPD_ROT_PORTRAIT) },
+    { MP_ROM_QSTR(MP_QSTR_ROT_INVERTED_LANDSCAPE), MP_ROM_INT(EPD_ROT_INVERTED_LANDSCAPE) },
+    { MP_ROM_QSTR(MP_QSTR_ROT_INVERTED_PORTRAIT),  MP_ROM_INT(EPD_ROT_INVERTED_PORTRAIT) },
     // Framebuf format constants for draw_framebuf() (same values as framebuf module)
     { MP_ROM_QSTR(MP_QSTR_MONO_HMSB), MP_ROM_INT(EPDIY_FMT_MONO_HMSB) },
     { MP_ROM_QSTR(MP_QSTR_GS2_HMSB),  MP_ROM_INT(EPDIY_FMT_GS2_HMSB) },
