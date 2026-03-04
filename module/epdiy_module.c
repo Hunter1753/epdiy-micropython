@@ -396,6 +396,106 @@ static mp_obj_t epd_obj_fill_arc(size_t n_args, const mp_obj_t *args) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(epd_obj_fill_arc_obj, 7, 7, epd_obj_fill_arc);
 
+// ─── Rounded rectangle helpers ────────────────────────────────────────────────
+// Draw selected quadrants of a circle outline using the Bresenham midpoint
+// algorithm. `corners` bitmask: 0x1=top-right, 0x2=top-left,
+//                               0x4=bottom-left, 0x8=bottom-right.
+static void draw_circle_quadrants(int cx, int cy, int r, uint8_t corners,
+                                  uint8_t color, uint8_t *fb) {
+    int f     = 1 - r;
+    int ddx   = 1;
+    int ddy   = -2 * r;
+    int x     = 0;
+    int y     = r;
+    while (x <= y) {
+        if (corners & 0x1) {  // top-right
+            epd_draw_pixel(cx + x, cy - y, color, fb);
+            epd_draw_pixel(cx + y, cy - x, color, fb);
+        }
+        if (corners & 0x2) {  // top-left
+            epd_draw_pixel(cx - x, cy - y, color, fb);
+            epd_draw_pixel(cx - y, cy - x, color, fb);
+        }
+        if (corners & 0x4) {  // bottom-left
+            epd_draw_pixel(cx - x, cy + y, color, fb);
+            epd_draw_pixel(cx - y, cy + x, color, fb);
+        }
+        if (corners & 0x8) {  // bottom-right
+            epd_draw_pixel(cx + x, cy + y, color, fb);
+            epd_draw_pixel(cx + y, cy + x, color, fb);
+        }
+        if (f >= 0) { y--; ddy += 2; f += ddy; }
+        x++; ddx += 2; f += ddx;
+    }
+}
+
+// ─── round_rect(x, y, w, h, r, color) ────────────────────────────────────────
+// Draw a rounded-rectangle outline. `r` is the corner radius.
+static mp_obj_t epd_obj_round_rect(size_t n_args, const mp_obj_t *args) {
+    epd_obj_t *self = MP_OBJ_TO_PTR(args[0]);
+    EPD_CHECK_INIT(self);
+    int x = mp_obj_get_int(args[1]);
+    int y = mp_obj_get_int(args[2]);
+    int w = mp_obj_get_int(args[3]);
+    int h = mp_obj_get_int(args[4]);
+    int r = mp_obj_get_int(args[5]);
+    uint8_t color = color_from_py(args[6]);
+    uint8_t *fb = epd_hl_get_framebuffer(&self->hl);
+
+    if (r < 0) r = 0;
+    if (r > w / 2) r = w / 2;
+    if (r > h / 2) r = h / 2;
+
+    // Straight edges
+    epd_draw_hline(x + r,         y,             w - 2 * r, color, fb);  // top
+    epd_draw_hline(x + r,         y + h - 1,     w - 2 * r, color, fb);  // bottom
+    epd_draw_vline(x,             y + r,          h - 2 * r, color, fb);  // left
+    epd_draw_vline(x + w - 1,     y + r,          h - 2 * r, color, fb);  // right
+
+    // Rounded corners
+    if (r > 0) {
+        draw_circle_quadrants(x + r,         y + r,         r, 0x2, color, fb);
+        draw_circle_quadrants(x + w - r - 1, y + r,         r, 0x1, color, fb);
+        draw_circle_quadrants(x + r,         y + h - r - 1, r, 0x4, color, fb);
+        draw_circle_quadrants(x + w - r - 1, y + h - r - 1, r, 0x8, color, fb);
+    }
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(epd_obj_round_rect_obj, 7, 7, epd_obj_round_rect);
+
+// ─── fill_round_rect(x, y, w, h, r, color) ───────────────────────────────────
+// Draw a filled rounded rectangle. `r` is the corner radius.
+static mp_obj_t epd_obj_fill_round_rect(size_t n_args, const mp_obj_t *args) {
+    epd_obj_t *self = MP_OBJ_TO_PTR(args[0]);
+    EPD_CHECK_INIT(self);
+    int x = mp_obj_get_int(args[1]);
+    int y = mp_obj_get_int(args[2]);
+    int w = mp_obj_get_int(args[3]);
+    int h = mp_obj_get_int(args[4]);
+    int r = mp_obj_get_int(args[5]);
+    uint8_t color = color_from_py(args[6]);
+    uint8_t *fb = epd_hl_get_framebuffer(&self->hl);
+
+    if (r < 0) r = 0;
+    if (r > w / 2) r = w / 2;
+    if (r > h / 2) r = h / 2;
+
+    // Central rectangle spanning full height
+    EpdRect center = { .x = x + r, .y = y, .width = w - 2 * r, .height = h };
+    epd_fill_rect(center, color, fb);
+
+    // Left and right corner columns via epdiy's fill helper
+    // corners=1 → right side of circle (fills right corners)
+    // corners=2 → left side of circle  (fills left corners)
+    // delta extends the fill span to bridge both corners vertically
+    if (r > 0) {
+        epd_fill_circle_helper(x + w - r - 1, y + r, r, 1, h - 2 * r - 1, color, fb);
+        epd_fill_circle_helper(x + r,          y + r, r, 2, h - 2 * r - 1, color, fb);
+    }
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(epd_obj_fill_round_rect_obj, 7, 7, epd_obj_fill_round_rect);
+
 // ─── set_text_color(fg[, bg]) ─────────────────────────────────────────────────
 // Set the foreground (and optionally background) color for write_text.
 // Colors are 0-15. bg defaults to 15 (white) when not given.
@@ -640,6 +740,8 @@ static const mp_rom_map_elem_t epd_obj_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_fill_circle),      MP_ROM_PTR(&epd_obj_fill_circle_obj) },
     { MP_ROM_QSTR(MP_QSTR_triangle),         MP_ROM_PTR(&epd_obj_triangle_obj) },
     { MP_ROM_QSTR(MP_QSTR_fill_triangle),    MP_ROM_PTR(&epd_obj_fill_triangle_obj) },
+    { MP_ROM_QSTR(MP_QSTR_round_rect),       MP_ROM_PTR(&epd_obj_round_rect_obj) },
+    { MP_ROM_QSTR(MP_QSTR_fill_round_rect),  MP_ROM_PTR(&epd_obj_fill_round_rect_obj) },
     { MP_ROM_QSTR(MP_QSTR_arc),              MP_ROM_PTR(&epd_obj_arc_obj) },
     { MP_ROM_QSTR(MP_QSTR_fill_arc),         MP_ROM_PTR(&epd_obj_fill_arc_obj) },
     { MP_ROM_QSTR(MP_QSTR_set_text_color),   MP_ROM_PTR(&epd_obj_set_text_color_obj) },
