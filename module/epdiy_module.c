@@ -668,6 +668,50 @@ static mp_obj_t epd_obj_draw_framebuf(size_t n_args, const mp_obj_t *args) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(epd_obj_draw_framebuf_obj, 7, 7, epd_obj_draw_framebuf);
 
+// ─── invalidate_area (internal) ───────────────────────────────────────────────
+// Make back_fb differ from front_fb in the given area so every pixel in that
+// region is treated as dirty by the next epd_hl_update_* call.
+static void invalidate_area(epd_obj_t *self, EpdRect area) {
+    int width = epd_width();
+    uint8_t *front = self->hl.front_fb;
+    uint8_t *back  = self->hl.back_fb;
+    for (int y = area.y; y < area.y + area.height; y++) {
+        int bx_start = area.x / 2;
+        int bx_end   = (area.x + area.width - 1) / 2;
+        for (int bx = bx_start; bx <= bx_end; bx++) {
+            int idx = y * (width / 2) + bx;
+            back[idx] = ~front[idx];
+        }
+    }
+}
+
+// ─── refresh([x, y, w, h]) ────────────────────────────────────────────────────
+// Invalidate the given area (or the full screen) and push it to the display,
+// managing power internally. Use this after clear() to force a full redraw.
+static mp_obj_t epd_obj_refresh(size_t n_args, const mp_obj_t *args) {
+    epd_obj_t *self = MP_OBJ_TO_PTR(args[0]);
+    EPD_CHECK_INIT(self);
+    if (n_args != 1 && n_args != 5) {
+        mp_raise_TypeError(MP_ERROR_TEXT("refresh() takes 0 or 4 arguments (x, y, w, h)"));
+    }
+    EpdRect area = (n_args == 5) ? (EpdRect){
+        .x      = mp_obj_get_int(args[1]),
+        .y      = mp_obj_get_int(args[2]),
+        .width  = mp_obj_get_int(args[3]),
+        .height = mp_obj_get_int(args[4]),
+    } : epd_full_screen();
+    invalidate_area(self, area);
+    epd_poweron();
+    enum EpdDrawError err = epd_hl_update_area(
+        &self->hl, MODE_GC16, get_temperature(), area);
+    epd_poweroff();
+    if (err != EPD_DRAW_SUCCESS) {
+        mp_raise_OSError(MP_EIO);
+    }
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(epd_obj_refresh_obj, 1, 5, epd_obj_refresh);
+
 // ─── update([mode]) ───────────────────────────────────────────────────────────
 // mode defaults to MODE_GL16 (non-flashing, full 16-gray update).
 // Must be called between poweron() and poweroff().
@@ -753,6 +797,7 @@ static const mp_rom_map_elem_t epd_obj_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_get_rotation), MP_ROM_PTR(&epd_obj_get_rotation_obj) },
     { MP_ROM_QSTR(MP_QSTR_update),      MP_ROM_PTR(&epd_obj_update_obj) },
     { MP_ROM_QSTR(MP_QSTR_update_area), MP_ROM_PTR(&epd_obj_update_area_obj) },
+    { MP_ROM_QSTR(MP_QSTR_refresh),     MP_ROM_PTR(&epd_obj_refresh_obj) },
 };
 static MP_DEFINE_CONST_DICT(epd_obj_locals_dict, epd_obj_locals_dict_table);
 

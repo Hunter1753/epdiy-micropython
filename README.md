@@ -171,6 +171,7 @@ epd.poweroff()
 |--------|-------------|
 | `epd.update([mode])` | Push the full framebuffer to the panel. `mode` defaults to `MODE_GL16`. Must be called between `poweron()` and `poweroff()`. |
 | `epd.update_area(x, y, w, h [, mode])` | Partial refresh of the given rectangle. `mode` defaults to `MODE_GL16`. Must be called between `poweron()` and `poweroff()`. |
+| `epd.refresh([x, y, w, h])` | Force-redraw the framebuffer (or a sub-area) to the panel, managing power internally. Unlike `update()`, this unconditionally redraws every pixel in the area regardless of what changed. Always uses `MODE_GC16`. |
 
 ### Example
 
