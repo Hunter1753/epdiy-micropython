@@ -18,3 +18,8 @@ install the current esp-idf and esptool
 2. run `prepare.sh` which sets up the micropython cross compiler and applies the neccessary patches
 3. run `build.sh` to build the firmware
 4. run `flash.sh` to use `esptool` to flash the firmware to the first connected board
+
+## How to create a release
+
+`git tag v1.0.0 && git push origin v1.0.0`
+
