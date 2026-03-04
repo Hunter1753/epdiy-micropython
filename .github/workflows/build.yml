@@ -66,12 +66,25 @@ jobs:
             build/partition_table/partition-table.bin
           if-no-files-found: error
 
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write 
+
+    steps:
+      - name: Download firmware artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware-${{ github.sha }}
+          path: build-artifacts/ # Downloads the files into this folder
+
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            build/micropython.bin
-            build/bootloader/bootloader.bin
-            build/partition_table/partition-table.bin
+            build-artifacts/micropython.bin
+            build-artifacts/bootloader/bootloader.bin
+            build-artifacts/partition_table/partition-table.bin
           generate_release_notes: true
