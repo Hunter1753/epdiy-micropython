@@ -1,16 +1,19 @@
-# Micropython build for the Lilygo T5-47 epaper display
+# Micropython build including epdiy
 
 This repository is using the latest version of vrolands https://github.com/vroland/epdiy
 
-It provides a micropython library to control the epaper display based on the ED047TC1 which is a 16 colour epaper display which supports partial refresh
+Currently only works with the Lilygo T5-47 epaper display based on the ED047TC1 which is a 16 colour epaper display which supports partial refresh.
+This repository currently only supports the old version using the ESP32-WROVER-E (ESP32-D0WQ6) with 8MB of PSRAM and 16MB of FLASH.
 
-This repository currently only supports the old version using the ESP32-WROVER-E (ESP32-D0WQ6) with 8MB of PSRAM and 16MB of FLASH
+Other boards that are supported by the epdiy library should be easily addable.
+
+It provides a micropython library to control the epaper display.
 
 this tries to replace the outdated micropython fork by Lilygo https://github.com/Xinyuan-LilyGO/lilygo-micropython
 
 ## Prequesites
 
-install the current esp-idf and esptool
+install the esp-idf 5.5.2 and esptool
 
 ## How to use
 
