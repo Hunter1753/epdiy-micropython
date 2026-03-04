@@ -93,3 +93,15 @@ epd.deinit()
 del epd
 ```
 
+# License
+
+The code in this repository is licensed under the LGPL-3.0 License - see the LICENSE file for details.
+
+## Third-Party Assets & Submodules:
+
+- MicroPython: MIT License (included as a submodule).
+
+- epdiy: LGPL-3.0 License (included as a submodule).
+
+- Fira Sans Font: SIL Open Font License (OFL) 1.1. The font header files located in the module/fonts/ directory are derivative works of Fira Sans. See module/fonts/OFL.txt for the full license text.
+
