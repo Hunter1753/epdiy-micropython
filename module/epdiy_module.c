@@ -319,6 +319,112 @@ static mp_obj_t epd_obj_write_text(size_t n_args, const mp_obj_t *args) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(epd_obj_write_text_obj, 5, 5, epd_obj_write_text);
 
+// ─── draw_framebuf(buf, width, height, format, x, y) ─────────────────────────
+// Blit a MicroPython-compatible framebuf (or any buffer-protocol object) onto
+// the epdiy framebuffer.
+//
+// buf    – framebuf.FrameBuffer, bytes, or bytearray (read via buffer protocol)
+// width  – pixel width of the source buffer
+// height – pixel height of the source buffer
+// format – pixel format; use the constants below or framebuf.MONO_HMSB etc.:
+//            MONO_HMSB = 4  (1 bpp; 0→black, 1→white)
+//            GS2_HMSB  = 5  (2 bpp; 0=black … 3=white)
+//            GS4_HMSB  = 2  (4 bpp; 0=black … 15=white)
+// x, y   – top-left destination position on the display
+//
+// Pixel extraction follows MicroPython's modframebuf.c conventions exactly.
+
+// Format identifiers — must match framebuf module integer values exactly:
+//   framebuf.MONO_HMSB = FRAMEBUF_MHMSB    = 4
+//   framebuf.GS2_HMSB  = FRAMEBUF_GS2_HMSB = 5
+//   framebuf.GS4_HMSB  = FRAMEBUF_GS4_HMSB = 2  (NOT 6; 6 is GS8)
+#define EPDIY_FMT_MONO_HMSB 4
+#define EPDIY_FMT_GS2_HMSB  5
+#define EPDIY_FMT_GS4_HMSB  2
+
+static mp_obj_t epd_obj_draw_framebuf(size_t n_args, const mp_obj_t *args) {
+    epd_obj_t *self = MP_OBJ_TO_PTR(args[0]);
+    EPD_CHECK_INIT(self);
+
+    mp_buffer_info_t bufinfo;
+    mp_get_buffer_raise(args[1], &bufinfo, MP_BUFFER_READ);
+
+    int src_w  = mp_obj_get_int(args[2]);
+    int src_h  = mp_obj_get_int(args[3]);
+    int format = mp_obj_get_int(args[4]);
+    int dst_x  = mp_obj_get_int(args[5]);
+    int dst_y  = mp_obj_get_int(args[6]);
+
+    if (src_w <= 0 || src_h <= 0) {
+        return mp_const_none;
+    }
+    if (format != EPDIY_FMT_MONO_HMSB &&
+        format != EPDIY_FMT_GS2_HMSB  &&
+        format != EPDIY_FMT_GS4_HMSB) {
+        mp_raise_ValueError(MP_ERROR_TEXT("format must be MONO_HMSB, GS2_HMSB, or GS4_HMSB"));
+    }
+
+    const uint8_t *src = (const uint8_t *)bufinfo.buf;
+    uint8_t *fb = epd_hl_get_framebuffer(&self->hl);
+
+    // Pixel stride, matching MicroPython's default when stride is not supplied:
+    //   MONO_HMSB: rounded up to a multiple of 8 pixels (1 byte = 8 px)
+    //   GS2_HMSB:  rounded up to a multiple of 4 pixels (1 byte = 4 px)
+    //   GS4_HMSB:  no rounding (1 byte = 2 px)
+    int stride;
+    if (format == EPDIY_FMT_MONO_HMSB) {
+        stride = (src_w + 7) & ~7;
+    } else if (format == EPDIY_FMT_GS2_HMSB) {
+        stride = (src_w + 3) & ~3;
+    } else {
+        stride = src_w;
+    }
+
+    for (int row = 0; row < src_h; row++) {
+        int py = dst_y + row;
+        if (py < 0 || py >= 540) {
+            continue;
+        }
+        for (int col = 0; col < src_w; col++) {
+            int px = dst_x + col;
+            if (px < 0 || px >= 960) {
+                continue;
+            }
+
+            uint8_t gray;  // 0 = black, 15 = white
+            if (format == EPDIY_FMT_MONO_HMSB) {
+                // modframebuf.c: offset = x & 0x07  → bit 0 holds the leftmost pixel.
+                int byte_idx = (col + row * stride) >> 3;
+                int bit = (src[byte_idx] >> (col & 0x07)) & 1;
+                gray = bit ? 15 : 0;  // 0=off(black), 1=on(white)
+            } else if (format == EPDIY_FMT_GS2_HMSB) {
+                // modframebuf.c: shift = (x & 3) << 1  → bits 1:0 hold the leftmost pixel.
+                int byte_idx = (col + row * stride) >> 2;
+                int shift    = (col & 0x03) << 1;
+                uint8_t val  = (src[byte_idx] >> shift) & 0x03;
+                gray = (uint8_t)(val * 5);  // 0→0, 1→5, 2→10, 3→15
+            } else {  // GS4_HMSB
+                // modframebuf.c: even x → HIGH nibble (>> 4), odd x → LOW nibble (& 0x0F).
+                int byte_idx = (col + row * stride) >> 1;
+                gray = (col & 1) ? (src[byte_idx] & 0x0F) : (src[byte_idx] >> 4);
+            }
+
+            // Write gray (0-15) into the epdiy framebuffer.
+            // epdiy layout (verified from epd_draw_pixel / epd_get_pixel source):
+            //   even x → LOW  nibble (bits 3:0)
+            //   odd  x → HIGH nibble (bits 7:4)
+            int epd_byte = (py * 960 + px) / 2;
+            if (px & 1) {  // odd → HIGH nibble
+                fb[epd_byte] = (fb[epd_byte] & 0x0F) | (uint8_t)(gray << 4);
+            } else {       // even → LOW nibble
+                fb[epd_byte] = (fb[epd_byte] & 0xF0) | gray;
+            }
+        }
+    }
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(epd_obj_draw_framebuf_obj, 7, 7, epd_obj_draw_framebuf);
+
 // ─── update([mode]) ───────────────────────────────────────────────────────────
 // mode defaults to MODE_GL16 (non-flashing, full 16-gray update).
 // Must be called between poweron() and poweroff().
@@ -377,6 +483,7 @@ static const mp_rom_map_elem_t epd_obj_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_set_text_align),   MP_ROM_PTR(&epd_obj_set_text_align_obj) },
     { MP_ROM_QSTR(MP_QSTR_reset_text_props), MP_ROM_PTR(&epd_obj_reset_text_props_obj) },
     { MP_ROM_QSTR(MP_QSTR_write_text),       MP_ROM_PTR(&epd_obj_write_text_obj) },
+    { MP_ROM_QSTR(MP_QSTR_draw_framebuf), MP_ROM_PTR(&epd_obj_draw_framebuf_obj) },
     { MP_ROM_QSTR(MP_QSTR_update),      MP_ROM_PTR(&epd_obj_update_obj) },
     { MP_ROM_QSTR(MP_QSTR_update_area), MP_ROM_PTR(&epd_obj_update_area_obj) },
 };
@@ -407,6 +514,10 @@ static const mp_rom_map_elem_t epdiy_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_ALIGN_LEFT),       MP_ROM_INT(EPD_DRAW_ALIGN_LEFT) },
     { MP_ROM_QSTR(MP_QSTR_ALIGN_RIGHT),      MP_ROM_INT(EPD_DRAW_ALIGN_RIGHT) },
     { MP_ROM_QSTR(MP_QSTR_ALIGN_CENTER),     MP_ROM_INT(EPD_DRAW_ALIGN_CENTER) },
+    // Framebuf format constants for draw_framebuf() (same values as framebuf module)
+    { MP_ROM_QSTR(MP_QSTR_MONO_HMSB), MP_ROM_INT(EPDIY_FMT_MONO_HMSB) },
+    { MP_ROM_QSTR(MP_QSTR_GS2_HMSB),  MP_ROM_INT(EPDIY_FMT_GS2_HMSB) },
+    { MP_ROM_QSTR(MP_QSTR_GS4_HMSB),  MP_ROM_INT(EPDIY_FMT_GS4_HMSB) },
 };
 static MP_DEFINE_CONST_DICT(epdiy_module_globals, epdiy_module_globals_table);
 

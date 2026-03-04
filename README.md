@@ -41,6 +41,9 @@ Colors are expressed as integers 0–15 (4-bit grayscale: 0 = black, 15 = white)
 | `epdiy.ALIGN_RIGHT` | Right-align text lines |
 | `epdiy.ALIGN_CENTER` | Centre-align text lines |
 | `epdiy.DRAW_BACKGROUND` | Fill the text bounding box with the background color |
+| `epdiy.MONO_HMSB` | Framebuf format: 1 bpp (matches `framebuf.MONO_HMSB` = 4) |
+| `epdiy.GS2_HMSB` | Framebuf format: 2 bpp grayscale (matches `framebuf.GS2_HMSB` = 5) |
+| `epdiy.GS4_HMSB` | Framebuf format: 4 bpp grayscale (matches `framebuf.GS4_HMSB` = 2) |
 
 ### `epdiy.EPD()`
 
@@ -77,6 +80,44 @@ All drawing methods write to an in-memory framebuffer. Call `update()` or `updat
 | `epd.set_text_color(fg [, bg])` | Set foreground color (and optionally background color) for `write_text`. Colors are 0–15. |
 | `epd.set_text_align(flags)` | Set text alignment / background drawing flags. Pass one or more `epdiy.ALIGN_*` / `epdiy.DRAW_BACKGROUND` constants combined with `\|`. |
 | `epd.reset_text_props()` | Reset all font properties to defaults (black foreground, no background, left-aligned). |
+| `epd.draw_framebuf(buf, width, height, format, x, y)` | Blit a MicroPython framebuffer (or any buffer-protocol object) onto the display framebuffer at `(x, y)`. See below. |
+
+#### `epd.draw_framebuf(buf, width, height, format, x, y)`
+
+Blits a MicroPython-compatible framebuffer onto the epdiy framebuffer at position `(x, y)`.
+
+| Parameter | Description |
+|-----------|-------------|
+| `buf` | Buffer-protocol object: `framebuf.FrameBuffer`, `bytearray`, or `bytes` |
+| `width` | Pixel width of the source buffer |
+| `height` | Pixel height of the source buffer |
+| `format` | Pixel format — one of `epdiy.MONO_HMSB`, `epdiy.GS2_HMSB`, or `epdiy.GS4_HMSB` (identical to the `framebuf` module constants) |
+| `x`, `y` | Top-left destination position on the display |
+
+Pixel format mapping to epdiy grayscale (0 = black, 15 = white):
+
+| Format | Bits/pixel | Mapping |
+|--------|-----------|---------|
+| `MONO_HMSB` | 1 | 0 → black (0), 1 → white (15) |
+| `GS2_HMSB` | 2 | 0 → 0, 1 → 5, 2 → 10, 3 → 15 |
+| `GS4_HMSB` | 4 | direct (0–15) |
+
+Pixels that fall outside the display bounds are silently clipped. The method only writes to the in-memory framebuffer; call `update()` or `update_area()` to push changes to the panel.
+
+```python
+import framebuf, epdiy
+
+epd = epdiy.EPD()
+epd.clear()
+buf = bytearray(200 * 100 // 2)                      # GS4_HMSB: 4 bpp
+fb  = framebuf.FrameBuffer(buf, 200, 100, framebuf.GS4_HMSB)
+fb.fill(15)                                           # white background
+fb.text("Hello", 0, 0, 0)                            # black text
+epd.draw_framebuf(fb, 200, 100, epdiy.GS4_HMSB, 10, 10)
+epd.poweron()
+epd.update()
+epd.poweroff()
+```
 
 #### Refresh
 
