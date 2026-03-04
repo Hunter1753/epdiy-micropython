@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: MIT
-//
 // MicroPython C extension module for the epdiy e-paper display library.
 // Target: LilyGo T5 4.7" (ED047TC1, 960x540) on ESP32-D0WQ6.
 //
