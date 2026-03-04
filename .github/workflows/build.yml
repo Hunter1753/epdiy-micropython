@@ -30,7 +30,7 @@ jobs:
         shell: bash
         run: |
           . ${IDF_PATH}/export.sh
-          ./build.sh
+          bash build.sh
 
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
