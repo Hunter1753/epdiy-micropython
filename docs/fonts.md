@@ -41,6 +41,24 @@ The font family name is derived from the filename stem using CamelCase conversio
 python convert_fonts.py 16 24 32 --compress
 ```
 
+## Removing user fonts
+
+To delete all generated user font headers and reset the registry to empty:
+
+```bash
+./clean_userfonts.sh
+```
+
+This removes every font family directory under `module/userfonts/` and regenerates an empty `userfonts.h`. The built-in `FiraSans` headers in `module/fonts/` are not affected.
+
+## Regenerating the registry
+
+If you manually add or remove header files inside `module/userfonts/`, regenerate `userfonts.h` without re-converting any fonts:
+
+```bash
+python add_font.py --regen-registry
+```
+
 ## Using custom fonts
 
 After running either script, rebuild the firmware (`build.sh`). The new fonts are then available by passing the font name to any text method:

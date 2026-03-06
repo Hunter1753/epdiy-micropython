@@ -1,3 +1,435 @@
+diff --git a/ports/esp32/boards/EPDIY_V2_V3/manifest.py b/ports/esp32/boards/EPDIY_V2_V3/manifest.py
+new file mode 100644
+index 000000000..832942f05
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V2_V3/manifest.py
+@@ -0,0 +1 @@
++include("$(PORT_DIR)/boards/manifest.py")
+diff --git a/ports/esp32/boards/EPDIY_V2_V3/mpconfigboard.cmake b/ports/esp32/boards/EPDIY_V2_V3/mpconfigboard.cmake
+new file mode 100644
+index 000000000..21a287b00
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V2_V3/mpconfigboard.cmake
+@@ -0,0 +1,22 @@
++set(IDF_TARGET esp32)
++
++set(SDKCONFIG_DEFAULTS
++    boards/sdkconfig.base
++    boards/sdkconfig.ble
++    boards/sdkconfig.240mhz
++    boards/sdkconfig.spiram
++    boards/${MICROPY_BOARD}/sdkconfig.board
++)
++
++get_filename_component(_EPDIY_DIR
++    "${CMAKE_CURRENT_LIST_DIR}/../../../../../epdiy" ABSOLUTE)
++list(APPEND EXTRA_COMPONENT_DIRS "${_EPDIY_DIR}")
++list(APPEND IDF_COMPONENTS epdiy)
++
++set(MICROPY_FROZEN_MANIFEST ${MICROPY_BOARD_DIR}/manifest.py)
++
++set(EPDIY_BOARD_DEF   epd_board_v2_v3)
++set(EPDIY_DISPLAY_DEF ED097TC2)
++set(EPDIY_WIDTH       1200)
++set(EPDIY_HEIGHT      825)
++set(EPDIY_VCOM_MV     1560)
+diff --git a/ports/esp32/boards/EPDIY_V2_V3/mpconfigboard.h b/ports/esp32/boards/EPDIY_V2_V3/mpconfigboard.h
+new file mode 100644
+index 000000000..c87770d78
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V2_V3/mpconfigboard.h
+@@ -0,0 +1,2 @@
++#define MICROPY_HW_BOARD_NAME "epdiy V2/V3"
++#define MICROPY_HW_MCU_NAME   "ESP32"
+diff --git a/ports/esp32/boards/EPDIY_V2_V3/sdkconfig.board b/ports/esp32/boards/EPDIY_V2_V3/sdkconfig.board
+new file mode 100644
+index 000000000..d1c15a382
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V2_V3/sdkconfig.board
+@@ -0,0 +1,5 @@
++# epdiy V2/V3 specific sdkconfig overrides
++
++# Flash: QIO mode at 40 MHz (safe default for WROVER modules)
++CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
++CONFIG_ESPTOOLPY_FLASHFREQ_40M=y
+diff --git a/ports/esp32/boards/EPDIY_V4/manifest.py b/ports/esp32/boards/EPDIY_V4/manifest.py
+new file mode 100644
+index 000000000..832942f05
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V4/manifest.py
+@@ -0,0 +1 @@
++include("$(PORT_DIR)/boards/manifest.py")
+diff --git a/ports/esp32/boards/EPDIY_V4/mpconfigboard.cmake b/ports/esp32/boards/EPDIY_V4/mpconfigboard.cmake
+new file mode 100644
+index 000000000..e331e98f2
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V4/mpconfigboard.cmake
+@@ -0,0 +1,22 @@
++set(IDF_TARGET esp32)
++
++set(SDKCONFIG_DEFAULTS
++    boards/sdkconfig.base
++    boards/sdkconfig.ble
++    boards/sdkconfig.240mhz
++    boards/sdkconfig.spiram
++    boards/${MICROPY_BOARD}/sdkconfig.board
++)
++
++get_filename_component(_EPDIY_DIR
++    "${CMAKE_CURRENT_LIST_DIR}/../../../../../epdiy" ABSOLUTE)
++list(APPEND EXTRA_COMPONENT_DIRS "${_EPDIY_DIR}")
++list(APPEND IDF_COMPONENTS epdiy)
++
++set(MICROPY_FROZEN_MANIFEST ${MICROPY_BOARD_DIR}/manifest.py)
++
++set(EPDIY_BOARD_DEF   epd_board_v4)
++set(EPDIY_DISPLAY_DEF ED097TC2)
++set(EPDIY_WIDTH       1200)
++set(EPDIY_HEIGHT      825)
++set(EPDIY_VCOM_MV     1560)
+diff --git a/ports/esp32/boards/EPDIY_V4/mpconfigboard.h b/ports/esp32/boards/EPDIY_V4/mpconfigboard.h
+new file mode 100644
+index 000000000..49574d706
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V4/mpconfigboard.h
+@@ -0,0 +1,2 @@
++#define MICROPY_HW_BOARD_NAME "epdiy V4"
++#define MICROPY_HW_MCU_NAME   "ESP32"
+diff --git a/ports/esp32/boards/EPDIY_V4/sdkconfig.board b/ports/esp32/boards/EPDIY_V4/sdkconfig.board
+new file mode 100644
+index 000000000..ed70496dc
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V4/sdkconfig.board
+@@ -0,0 +1,5 @@
++# epdiy V4 specific sdkconfig overrides
++
++# Flash: QIO mode at 40 MHz (safe default for WROVER modules)
++CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
++CONFIG_ESPTOOLPY_FLASHFREQ_40M=y
+diff --git a/ports/esp32/boards/EPDIY_V5/manifest.py b/ports/esp32/boards/EPDIY_V5/manifest.py
+new file mode 100644
+index 000000000..832942f05
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V5/manifest.py
+@@ -0,0 +1 @@
++include("$(PORT_DIR)/boards/manifest.py")
+diff --git a/ports/esp32/boards/EPDIY_V5/mpconfigboard.cmake b/ports/esp32/boards/EPDIY_V5/mpconfigboard.cmake
+new file mode 100644
+index 000000000..de82cfa4b
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V5/mpconfigboard.cmake
+@@ -0,0 +1,22 @@
++set(IDF_TARGET esp32)
++
++set(SDKCONFIG_DEFAULTS
++    boards/sdkconfig.base
++    boards/sdkconfig.ble
++    boards/sdkconfig.240mhz
++    boards/sdkconfig.spiram
++    boards/${MICROPY_BOARD}/sdkconfig.board
++)
++
++get_filename_component(_EPDIY_DIR
++    "${CMAKE_CURRENT_LIST_DIR}/../../../../../epdiy" ABSOLUTE)
++list(APPEND EXTRA_COMPONENT_DIRS "${_EPDIY_DIR}")
++list(APPEND IDF_COMPONENTS epdiy)
++
++set(MICROPY_FROZEN_MANIFEST ${MICROPY_BOARD_DIR}/manifest.py)
++
++set(EPDIY_BOARD_DEF   epd_board_v5)
++set(EPDIY_DISPLAY_DEF ED097TC2)
++set(EPDIY_WIDTH       1200)
++set(EPDIY_HEIGHT      825)
++set(EPDIY_VCOM_MV     1560)
+diff --git a/ports/esp32/boards/EPDIY_V5/mpconfigboard.h b/ports/esp32/boards/EPDIY_V5/mpconfigboard.h
+new file mode 100644
+index 000000000..af5455da1
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V5/mpconfigboard.h
+@@ -0,0 +1,2 @@
++#define MICROPY_HW_BOARD_NAME "epdiy V5"
++#define MICROPY_HW_MCU_NAME   "ESP32"
+diff --git a/ports/esp32/boards/EPDIY_V5/sdkconfig.board b/ports/esp32/boards/EPDIY_V5/sdkconfig.board
+new file mode 100644
+index 000000000..a4ceaa067
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V5/sdkconfig.board
+@@ -0,0 +1,5 @@
++# epdiy V5 specific sdkconfig overrides
++
++# Flash: QIO mode at 40 MHz (safe default for WROVER modules)
++CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
++CONFIG_ESPTOOLPY_FLASHFREQ_40M=y
+diff --git a/ports/esp32/boards/EPDIY_V6/manifest.py b/ports/esp32/boards/EPDIY_V6/manifest.py
+new file mode 100644
+index 000000000..832942f05
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V6/manifest.py
+@@ -0,0 +1 @@
++include("$(PORT_DIR)/boards/manifest.py")
+diff --git a/ports/esp32/boards/EPDIY_V6/mpconfigboard.cmake b/ports/esp32/boards/EPDIY_V6/mpconfigboard.cmake
+new file mode 100644
+index 000000000..0393a95f6
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V6/mpconfigboard.cmake
+@@ -0,0 +1,22 @@
++set(IDF_TARGET esp32)
++
++set(SDKCONFIG_DEFAULTS
++    boards/sdkconfig.base
++    boards/sdkconfig.ble
++    boards/sdkconfig.240mhz
++    boards/sdkconfig.spiram
++    boards/${MICROPY_BOARD}/sdkconfig.board
++)
++
++get_filename_component(_EPDIY_DIR
++    "${CMAKE_CURRENT_LIST_DIR}/../../../../../epdiy" ABSOLUTE)
++list(APPEND EXTRA_COMPONENT_DIRS "${_EPDIY_DIR}")
++list(APPEND IDF_COMPONENTS epdiy)
++
++set(MICROPY_FROZEN_MANIFEST ${MICROPY_BOARD_DIR}/manifest.py)
++
++set(EPDIY_BOARD_DEF   epd_board_v6)
++set(EPDIY_DISPLAY_DEF ED097TC2)
++set(EPDIY_WIDTH       1200)
++set(EPDIY_HEIGHT      825)
++set(EPDIY_VCOM_MV     1560)
+diff --git a/ports/esp32/boards/EPDIY_V6/mpconfigboard.h b/ports/esp32/boards/EPDIY_V6/mpconfigboard.h
+new file mode 100644
+index 000000000..e52f7105c
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V6/mpconfigboard.h
+@@ -0,0 +1,2 @@
++#define MICROPY_HW_BOARD_NAME "epdiy V6"
++#define MICROPY_HW_MCU_NAME   "ESP32"
+diff --git a/ports/esp32/boards/EPDIY_V6/sdkconfig.board b/ports/esp32/boards/EPDIY_V6/sdkconfig.board
+new file mode 100644
+index 000000000..ce0fa12a5
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V6/sdkconfig.board
+@@ -0,0 +1,5 @@
++# epdiy V6 specific sdkconfig overrides
++
++# Flash: QIO mode at 40 MHz (safe default for WROVER modules)
++CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
++CONFIG_ESPTOOLPY_FLASHFREQ_40M=y
+diff --git a/ports/esp32/boards/EPDIY_V7/manifest.py b/ports/esp32/boards/EPDIY_V7/manifest.py
+new file mode 100644
+index 000000000..832942f05
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V7/manifest.py
+@@ -0,0 +1 @@
++include("$(PORT_DIR)/boards/manifest.py")
+diff --git a/ports/esp32/boards/EPDIY_V7/mpconfigboard.cmake b/ports/esp32/boards/EPDIY_V7/mpconfigboard.cmake
+new file mode 100644
+index 000000000..5ff8acfe4
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V7/mpconfigboard.cmake
+@@ -0,0 +1,22 @@
++set(IDF_TARGET esp32s3)
++
++set(SDKCONFIG_DEFAULTS
++    boards/sdkconfig.base
++    boards/sdkconfig.ble
++    boards/sdkconfig.240mhz
++    boards/sdkconfig.spiram_sx
++    boards/${MICROPY_BOARD}/sdkconfig.board
++)
++
++get_filename_component(_EPDIY_DIR
++    "${CMAKE_CURRENT_LIST_DIR}/../../../../../epdiy" ABSOLUTE)
++list(APPEND EXTRA_COMPONENT_DIRS "${_EPDIY_DIR}")
++list(APPEND IDF_COMPONENTS epdiy)
++
++set(MICROPY_FROZEN_MANIFEST ${MICROPY_BOARD_DIR}/manifest.py)
++
++set(EPDIY_BOARD_DEF   epd_board_v7)
++set(EPDIY_DISPLAY_DEF ED097TC2)
++set(EPDIY_WIDTH       1200)
++set(EPDIY_HEIGHT      825)
++set(EPDIY_VCOM_MV     1560)
+diff --git a/ports/esp32/boards/EPDIY_V7/mpconfigboard.h b/ports/esp32/boards/EPDIY_V7/mpconfigboard.h
+new file mode 100644
+index 000000000..7e80c82a8
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V7/mpconfigboard.h
+@@ -0,0 +1,2 @@
++#define MICROPY_HW_BOARD_NAME "epdiy V7"
++#define MICROPY_HW_MCU_NAME   "ESP32-S3"
+diff --git a/ports/esp32/boards/EPDIY_V7/sdkconfig.board b/ports/esp32/boards/EPDIY_V7/sdkconfig.board
+new file mode 100644
+index 000000000..383c58e8f
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V7/sdkconfig.board
+@@ -0,0 +1,5 @@
++# epdiy V7 specific sdkconfig overrides
++
++# Flash: QIO mode at 80 MHz
++CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
++CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
+diff --git a/ports/esp32/boards/EPDIY_V7_103/manifest.py b/ports/esp32/boards/EPDIY_V7_103/manifest.py
+new file mode 100644
+index 000000000..832942f05
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V7_103/manifest.py
+@@ -0,0 +1 @@
++include("$(PORT_DIR)/boards/manifest.py")
+diff --git a/ports/esp32/boards/EPDIY_V7_103/mpconfigboard.cmake b/ports/esp32/boards/EPDIY_V7_103/mpconfigboard.cmake
+new file mode 100644
+index 000000000..6ddbc5228
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V7_103/mpconfigboard.cmake
+@@ -0,0 +1,22 @@
++set(IDF_TARGET esp32s3)
++
++set(SDKCONFIG_DEFAULTS
++    boards/sdkconfig.base
++    boards/sdkconfig.ble
++    boards/sdkconfig.240mhz
++    boards/sdkconfig.spiram_sx
++    boards/${MICROPY_BOARD}/sdkconfig.board
++)
++
++get_filename_component(_EPDIY_DIR
++    "${CMAKE_CURRENT_LIST_DIR}/../../../../../epdiy" ABSOLUTE)
++list(APPEND EXTRA_COMPONENT_DIRS "${_EPDIY_DIR}")
++list(APPEND IDF_COMPONENTS epdiy)
++
++set(MICROPY_FROZEN_MANIFEST ${MICROPY_BOARD_DIR}/manifest.py)
++
++set(EPDIY_BOARD_DEF   epd_board_v7_103)
++set(EPDIY_DISPLAY_DEF ED103MC2)
++set(EPDIY_WIDTH       1872)
++set(EPDIY_HEIGHT      1404)
++set(EPDIY_VCOM_MV     1560)
+diff --git a/ports/esp32/boards/EPDIY_V7_103/mpconfigboard.h b/ports/esp32/boards/EPDIY_V7_103/mpconfigboard.h
+new file mode 100644
+index 000000000..ace9e57c6
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V7_103/mpconfigboard.h
+@@ -0,0 +1,2 @@
++#define MICROPY_HW_BOARD_NAME "epdiy V7 (10.3\")"
++#define MICROPY_HW_MCU_NAME   "ESP32-S3"
+diff --git a/ports/esp32/boards/EPDIY_V7_103/sdkconfig.board b/ports/esp32/boards/EPDIY_V7_103/sdkconfig.board
+new file mode 100644
+index 000000000..335f3f9af
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V7_103/sdkconfig.board
+@@ -0,0 +1,5 @@
++# epdiy V7 (10.3") specific sdkconfig overrides
++
++# Flash: QIO mode at 80 MHz
++CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
++CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
+diff --git a/ports/esp32/boards/EPDIY_V7_RAW/manifest.py b/ports/esp32/boards/EPDIY_V7_RAW/manifest.py
+new file mode 100644
+index 000000000..832942f05
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V7_RAW/manifest.py
+@@ -0,0 +1 @@
++include("$(PORT_DIR)/boards/manifest.py")
+diff --git a/ports/esp32/boards/EPDIY_V7_RAW/mpconfigboard.cmake b/ports/esp32/boards/EPDIY_V7_RAW/mpconfigboard.cmake
+new file mode 100644
+index 000000000..09a5f1f3a
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V7_RAW/mpconfigboard.cmake
+@@ -0,0 +1,22 @@
++set(IDF_TARGET esp32s3)
++
++set(SDKCONFIG_DEFAULTS
++    boards/sdkconfig.base
++    boards/sdkconfig.ble
++    boards/sdkconfig.240mhz
++    boards/sdkconfig.spiram_sx
++    boards/${MICROPY_BOARD}/sdkconfig.board
++)
++
++get_filename_component(_EPDIY_DIR
++    "${CMAKE_CURRENT_LIST_DIR}/../../../../../epdiy" ABSOLUTE)
++list(APPEND EXTRA_COMPONENT_DIRS "${_EPDIY_DIR}")
++list(APPEND IDF_COMPONENTS epdiy)
++
++set(MICROPY_FROZEN_MANIFEST ${MICROPY_BOARD_DIR}/manifest.py)
++
++set(EPDIY_BOARD_DEF   epd_board_v7_raw)
++set(EPDIY_DISPLAY_DEF ED097TC2)
++set(EPDIY_WIDTH       1200)
++set(EPDIY_HEIGHT      825)
++set(EPDIY_VCOM_MV     1560)
+diff --git a/ports/esp32/boards/EPDIY_V7_RAW/mpconfigboard.h b/ports/esp32/boards/EPDIY_V7_RAW/mpconfigboard.h
+new file mode 100644
+index 000000000..e87f91857
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V7_RAW/mpconfigboard.h
+@@ -0,0 +1,2 @@
++#define MICROPY_HW_BOARD_NAME "epdiy V7 Raw"
++#define MICROPY_HW_MCU_NAME   "ESP32-S3"
+diff --git a/ports/esp32/boards/EPDIY_V7_RAW/sdkconfig.board b/ports/esp32/boards/EPDIY_V7_RAW/sdkconfig.board
+new file mode 100644
+index 000000000..190fc19d8
+--- /dev/null
++++ b/ports/esp32/boards/EPDIY_V7_RAW/sdkconfig.board
+@@ -0,0 +1,5 @@
++# epdiy V7 Raw specific sdkconfig overrides
++
++# Flash: QIO mode at 80 MHz
++CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
++CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
+diff --git a/ports/esp32/boards/LILYGO_S3/manifest.py b/ports/esp32/boards/LILYGO_S3/manifest.py
+new file mode 100644
+index 000000000..832942f05
+--- /dev/null
++++ b/ports/esp32/boards/LILYGO_S3/manifest.py
+@@ -0,0 +1 @@
++include("$(PORT_DIR)/boards/manifest.py")
+diff --git a/ports/esp32/boards/LILYGO_S3/mpconfigboard.cmake b/ports/esp32/boards/LILYGO_S3/mpconfigboard.cmake
+new file mode 100644
+index 000000000..ca1af2e7f
+--- /dev/null
++++ b/ports/esp32/boards/LILYGO_S3/mpconfigboard.cmake
+@@ -0,0 +1,22 @@
++set(IDF_TARGET esp32s3)
++
++set(SDKCONFIG_DEFAULTS
++    boards/sdkconfig.base
++    boards/sdkconfig.ble
++    boards/sdkconfig.240mhz
++    boards/sdkconfig.spiram_sx
++    boards/${MICROPY_BOARD}/sdkconfig.board
++)
++
++get_filename_component(_EPDIY_DIR
++    "${CMAKE_CURRENT_LIST_DIR}/../../../../../epdiy" ABSOLUTE)
++list(APPEND EXTRA_COMPONENT_DIRS "${_EPDIY_DIR}")
++list(APPEND IDF_COMPONENTS epdiy)
++
++set(MICROPY_FROZEN_MANIFEST ${MICROPY_BOARD_DIR}/manifest.py)
++
++set(EPDIY_BOARD_DEF   lilygo_board_s3)
++set(EPDIY_DISPLAY_DEF ED047TC1)
++set(EPDIY_WIDTH       960)
++set(EPDIY_HEIGHT      540)
++set(EPDIY_VCOM_MV     1560)
+diff --git a/ports/esp32/boards/LILYGO_S3/mpconfigboard.h b/ports/esp32/boards/LILYGO_S3/mpconfigboard.h
+new file mode 100644
+index 000000000..702debcde
+--- /dev/null
++++ b/ports/esp32/boards/LILYGO_S3/mpconfigboard.h
+@@ -0,0 +1,2 @@
++#define MICROPY_HW_BOARD_NAME "LilyGo T5 4.7 EPaper S3"
++#define MICROPY_HW_MCU_NAME   "ESP32-S3"
+diff --git a/ports/esp32/boards/LILYGO_S3/sdkconfig.board b/ports/esp32/boards/LILYGO_S3/sdkconfig.board
+new file mode 100644
+index 000000000..f667781be
+--- /dev/null
++++ b/ports/esp32/boards/LILYGO_S3/sdkconfig.board
+@@ -0,0 +1,5 @@
++# LilyGo T5 4.7 S3 specific sdkconfig overrides
++
++# Flash: QIO mode at 80 MHz
++CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
++CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
 diff --git a/ports/esp32/boards/LILYGO_T5_47/manifest.py b/ports/esp32/boards/LILYGO_T5_47/manifest.py
 new file mode 100644
 index 000000000..832942f05
@@ -7,10 +439,10 @@ index 000000000..832942f05
 +include("$(PORT_DIR)/boards/manifest.py")
 diff --git a/ports/esp32/boards/LILYGO_T5_47/mpconfigboard.cmake b/ports/esp32/boards/LILYGO_T5_47/mpconfigboard.cmake
 new file mode 100644
-index 000000000..8023217eb
+index 000000000..a6332c5f1
 --- /dev/null
 +++ b/ports/esp32/boards/LILYGO_T5_47/mpconfigboard.cmake
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,30 @@
 +set(IDF_TARGET esp32)
 +
 +set(SDKCONFIG_DEFAULTS
@@ -35,6 +467,12 @@ index 000000000..8023217eb
 +list(APPEND IDF_COMPONENTS epdiy)
 +
 +set(MICROPY_FROZEN_MANIFEST ${MICROPY_BOARD_DIR}/manifest.py)
++
++set(EPDIY_BOARD_DEF   epd_board_lilygo_t5_47)
++set(EPDIY_DISPLAY_DEF ED047TC1)
++set(EPDIY_WIDTH       960)
++set(EPDIY_HEIGHT      540)
++set(EPDIY_VCOM_MV     1560)
 diff --git a/ports/esp32/boards/LILYGO_T5_47/mpconfigboard.h b/ports/esp32/boards/LILYGO_T5_47/mpconfigboard.h
 new file mode 100644
 index 000000000..7c56eeffc
@@ -62,21 +500,3 @@ index 000000000..41729679d
 +
 +# Minimum silicon revision: ESP32-D0WQ6 is rev 3
 +CONFIG_ESP32_REV_MIN_3=y
-diff --git a/ports/esp32/lockfiles/dependencies.lock.esp32 b/ports/esp32/lockfiles/dependencies.lock.esp32
-index 8ba25c770..5061c0013 100644
---- a/ports/esp32/lockfiles/dependencies.lock.esp32
-+++ b/ports/esp32/lockfiles/dependencies.lock.esp32
-@@ -25,11 +25,11 @@ dependencies:
-   idf:
-     source:
-       type: idf
--    version: 5.5.1
-+    version: 5.5.2
- direct_dependencies:
- - espressif/lan867x
- - espressif/mdns
- - idf
--manifest_hash: 482087bc40f0e187795a9ef9ad08ef15a585b4cdabc296c715a9d19284622150
-+manifest_hash: 71504b958ff9b5659c92ba274ffd22bf2124e98c8bc9cfd0373af19650a2527c
- target: esp32
- version: 2.0.0

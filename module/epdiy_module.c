@@ -1,5 +1,5 @@
 // MicroPython C extension module for the epdiy e-paper display library.
-// Target: LilyGo T5 4.7" (ED047TC1, 960x540) on ESP32-D0WQ6.
+// Board and display are selected at compile time via mpconfigboard.cmake.
 //
 // Usage:
 //   import epdiy
@@ -21,6 +21,15 @@
 #include "py/runtime.h"
 
 #include "epdiy.h"
+
+// Board/display selection — set by mpconfigboard.cmake; fall back to LILYGO_T5_47.
+#ifndef EPDIY_BOARD_DEF
+#define EPDIY_BOARD_DEF  epd_board_lilygo_t5_47
+#define EPDIY_DISPLAY_DEF ED047TC1
+#define EPDIY_WIDTH      960
+#define EPDIY_HEIGHT     540
+#define EPDIY_VCOM_MV    1560
+#endif
 
 #include "fonts/FiraSans/firasans_12.h"
 #include "fonts/FiraSans/firasans_20.h"
@@ -59,7 +68,7 @@ static uint8_t color_from_py(mp_obj_t c_obj) {
 }
 
 // Read ambient temperature; fall back to 25 °C when no sensor is fitted
-// (epd_board_lilygo_t5_47 has get_temperature = NULL -> returns 0.0).
+// (some boards have get_temperature = NULL -> epd_ambient_temperature returns 0.0).
 static int get_temperature(void) {
     int t = (int)epd_ambient_temperature();
     return t ? t : 25;
@@ -74,8 +83,8 @@ static mp_obj_t epd_make_new(const mp_obj_type_t *type,
         mp_raise_OSError(MP_EBUSY);
     }
     epd_obj_t *self = mp_obj_malloc(epd_obj_t, type);
-    epd_init(&epd_board_lilygo_t5_47, &ED047TC1, EPD_LUT_64K);
-    epd_set_vcom(1560);
+    epd_init(&EPDIY_BOARD_DEF, &EPDIY_DISPLAY_DEF, EPD_LUT_64K);
+    epd_set_vcom(EPDIY_VCOM_MV);
     self->hl = epd_hl_init(EPD_BUILTIN_WAVEFORM);
     self->font_props = epd_font_properties_default();
     self->initialized = true;
@@ -384,10 +393,10 @@ static mp_obj_t epd_obj_fill_arc(size_t n_args, const mp_obj_t *args) {
     int r2 = r * r;
 
     for (int py = cy - r; py <= cy + r; py++) {
-        if (py < 0 || py >= 540) continue;
+        if (py < 0 || py >= EPDIY_HEIGHT) continue;
         int dy = py - cy;
         for (int px = cx - r; px <= cx + r; px++) {
-            if (px < 0 || px >= 960) continue;
+            if (px < 0 || px >= EPDIY_WIDTH) continue;
             int dx = px - cx;
             if (dx * dx + dy * dy > r2) continue;
             if (dx == 0 && dy == 0) {
@@ -749,12 +758,12 @@ static mp_obj_t epd_obj_draw_framebuf(size_t n_args, const mp_obj_t *args) {
 
     for (int row = 0; row < src_h; row++) {
         int py = dst_y + row;
-        if (py < 0 || py >= 540) {
+        if (py < 0 || py >= EPDIY_HEIGHT) {
             continue;
         }
         for (int col = 0; col < src_w; col++) {
             int px = dst_x + col;
-            if (px < 0 || px >= 960) {
+            if (px < 0 || px >= EPDIY_WIDTH) {
                 continue;
             }
 
@@ -780,7 +789,7 @@ static mp_obj_t epd_obj_draw_framebuf(size_t n_args, const mp_obj_t *args) {
             // epdiy layout (verified from epd_draw_pixel / epd_get_pixel source):
             //   even x → LOW  nibble (bits 3:0)
             //   odd  x → HIGH nibble (bits 7:4)
-            int epd_byte = (py * 960 + px) / 2;
+            int epd_byte = (py * EPDIY_WIDTH + px) / 2;
             if (px & 1) {  // odd → HIGH nibble
                 fb[epd_byte] = (fb[epd_byte] & 0x0F) | (uint8_t)(gray << 4);
             } else {       // even → LOW nibble
@@ -946,9 +955,9 @@ static const mp_rom_map_elem_t epdiy_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_MODE_GC16), MP_ROM_INT(MODE_GC16) },
     { MP_ROM_QSTR(MP_QSTR_MODE_GL16), MP_ROM_INT(MODE_GL16) },
     { MP_ROM_QSTR(MP_QSTR_MODE_A2),   MP_ROM_INT(MODE_A2) },
-    // Display geometry constants for ED047TC1
-    { MP_ROM_QSTR(MP_QSTR_WIDTH),            MP_ROM_INT(960) },
-    { MP_ROM_QSTR(MP_QSTR_HEIGHT),           MP_ROM_INT(540) },
+    // Display geometry constants (set at compile time by mpconfigboard.cmake)
+    { MP_ROM_QSTR(MP_QSTR_WIDTH),            MP_ROM_INT(EPDIY_WIDTH) },
+    { MP_ROM_QSTR(MP_QSTR_HEIGHT),           MP_ROM_INT(EPDIY_HEIGHT) },
     // Font flags for set_text_align()
     { MP_ROM_QSTR(MP_QSTR_DRAW_BACKGROUND),  MP_ROM_INT(EPD_DRAW_BACKGROUND) },
     { MP_ROM_QSTR(MP_QSTR_ALIGN_LEFT),       MP_ROM_INT(EPD_DRAW_ALIGN_LEFT) },

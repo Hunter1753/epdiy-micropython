@@ -142,11 +142,23 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
-    parser.add_argument("font_file", help="Path to .ttf or .otf font file.")
-    parser.add_argument("font_name", help="C-identifier font family name (e.g. Roboto).")
-    parser.add_argument("size", type=int, help="Point size (e.g. 18).")
+    parser.add_argument("font_file", nargs="?", help="Path to .ttf or .otf font file.")
+    parser.add_argument("font_name", nargs="?", help="C-identifier font family name (e.g. Roboto).")
+    parser.add_argument("size", nargs="?", type=int, help="Point size (e.g. 18).")
     parser.add_argument("--compress", action="store_true", help="Compress glyph bitmaps.")
+    parser.add_argument(
+        "--regen-registry",
+        action="store_true",
+        help="Regenerate userfonts.h from existing fonts in module/userfonts/ without converting.",
+    )
     args = parser.parse_args()
+
+    if args.regen_registry:
+        regenerate_registry()
+        return
+
+    if not all([args.font_file, args.font_name, args.size]):
+        parser.error("font_file, font_name, and size are required when not using --regen-registry")
 
     convert_font(args.font_file, args.font_name, args.size, args.compress)
     regenerate_registry()

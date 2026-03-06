@@ -19,8 +19,38 @@ install the esp-idf 5.5.2 and esptool
 
 1. Clone this repo using `git clone --recurse-submodules $url` to fetch all the submodules
 2. Run `prepare.sh` which sets up the micropython cross compiler and applies the neccessary patches
-3. Run `build.sh` to build the firmware
+3. Run `build.sh [BOARD]` to build the firmware (defaults to `LILYGO_T5_47`)
 4. Run `flash.sh` to use `esptool` to flash the firmware to the first connected board
+
+### Supported Board Types
+
+Pass the board name as the first argument to `build.sh`:
+
+| Board argument    | Hardware                        | MCU        | Display   |
+|-------------------|---------------------------------|------------|-----------|
+| `LILYGO_T5_47`    | LilyGo T5 4.7" EPaper (default) | ESP32      | ED047TC1  |
+| `LILYGO_S3`       | LilyGo T5 4.7" EPaper S3        | ESP32-S3   | ED047TC1  |
+| `EPDIY_V2_V3`     | epdiy board V2/V3               | ESP32      | ED097TC2  |
+| `EPDIY_V4`        | epdiy board V4                  | ESP32      | ED097TC2  |
+| `EPDIY_V5`        | epdiy board V5                  | ESP32      | ED097TC2  |
+| `EPDIY_V6`        | epdiy board V6                  | ESP32      | ED097TC2  |
+| `EPDIY_V7`        | epdiy board V7                  | ESP32-S3   | ED097TC2  |
+| `EPDIY_V7_103`    | epdiy board V7 (10.3")          | ESP32-S3   | ED103MC2  |
+| `EPDIY_V7_RAW`    | epdiy board V7 Raw              | ESP32-S3   | ED097TC2  |
+
+Examples:
+
+```sh
+./build.sh                  # build for LilyGo T5 4.7 (ESP32)
+./build.sh LILYGO_S3        # build for LilyGo T5 4.7 S3
+./build.sh EPDIY_V7         # build for epdiy V7 (ESP32-S3)
+```
+
+When the board type changes between builds, `build.sh` automatically runs `fullclean.sh` and `prepare.sh` to ensure the build directory is clean and patches are correctly applied for the new target.
+
+> **Warning:** `fullclean.sh` resets the `micropython` and `epdiy` submodules with `git reset --hard` and `git clean -dfx`, which **permanently wipes any direct changes** made inside those directories. New board definitions must therefore be added as patch files under `patches/micropython/` rather than by editing the submodules directly. `prepare.sh` re-applies all patches after a clean.
+>
+> Custom fonts stored in `module/fonts/` are **not** affected by `fullclean.sh` and will be preserved across cleans.
 
 ## How to create a release
 
@@ -28,7 +58,7 @@ install the esp-idf 5.5.2 and esptool
 
 ## Adding Custom Fonts
 
-The firmware ships with **FiraSans** at sizes 12 and 20. Additional TTF/OTF fonts can be compiled in using `add_font.py` (single font) or `convert_fonts.py` (batch). See [docs/fonts.md](docs/fonts.md) for full details.
+The firmware ships with **FiraSans** at sizes 12 and 20. Additional TTF/OTF fonts can be compiled in using `add_font.py` (single font) or `convert_fonts.py` (batch). Use `clean_userfonts.sh` to remove all user fonts, or `python add_font.py --regen-registry` to rebuild the font registry from existing headers. See [docs/fonts.md](docs/fonts.md) for full details.
 
 ## API Reference
 

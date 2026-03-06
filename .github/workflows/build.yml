@@ -37,6 +37,18 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: espressif/idf:v5.5.2
+    strategy:
+      matrix:
+        board:
+          - LILYGO_T5_47
+          - EPDIY_V2_V3
+          - EPDIY_V4
+          - EPDIY_V5
+          - EPDIY_V6
+          - EPDIY_V7
+          - EPDIY_V7_103
+          - EPDIY_V7_RAW
+          - LILYGO_S3
 
     steps:
       - name: Checkout repository with submodules
@@ -50,20 +62,20 @@ jobs:
           . ${IDF_PATH}/export.sh
           bash prepare.sh
 
-      - name: Build firmware
+      - name: Build firmware (${{ matrix.board }})
         shell: bash
         run: |
           . ${IDF_PATH}/export.sh
-          bash build.sh
+          bash build.sh ${{ matrix.board }}
 
-      - name: Upload firmware artifacts
+      - name: Upload firmware artifacts (${{ matrix.board }})
         uses: actions/upload-artifact@v4
         with:
-          name: firmware-${{ github.sha }}
+          name: firmware-${{ matrix.board }}-${{ github.sha }}
           path: |
-            build/micropython.bin
-            build/bootloader/bootloader.bin
-            build/partition_table/partition-table.bin
+            build/${{ matrix.board }}/micropython.bin
+            build/${{ matrix.board }}/bootloader/bootloader.bin
+            build/${{ matrix.board }}/partition_table/partition-table.bin
           if-no-files-found: error
 
   release:
@@ -71,20 +83,32 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
-      contents: write 
+      contents: write
+    strategy:
+      matrix:
+        board:
+          - LILYGO_T5_47
+          - EPDIY_V2_V3
+          - EPDIY_V4
+          - EPDIY_V5
+          - EPDIY_V6
+          - EPDIY_V7
+          - EPDIY_V7_103
+          - EPDIY_V7_RAW
+          - LILYGO_S3
 
     steps:
-      - name: Download firmware artifacts
+      - name: Download firmware artifacts (${{ matrix.board }})
         uses: actions/download-artifact@v4
         with:
-          name: firmware-${{ github.sha }}
-          path: build-artifacts/ # Downloads the files into this folder
+          name: firmware-${{ matrix.board }}-${{ github.sha }}
+          path: build-artifacts/${{ matrix.board }}/
 
-      - name: Create GitHub Release
+      - name: Create GitHub Release (${{ matrix.board }})
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            build-artifacts/micropython.bin
-            build-artifacts/bootloader/bootloader.bin
-            build-artifacts/partition_table/partition-table.bin
+            build-artifacts/${{ matrix.board }}/micropython.bin
+            build-artifacts/${{ matrix.board }}/bootloader/bootloader.bin
+            build-artifacts/${{ matrix.board }}/partition_table/partition-table.bin
           generate_release_notes: true
