@@ -6,8 +6,8 @@ Colors are expressed as integers 0–15 (4-bit grayscale: 0 = black, 15 = white)
 
 | Name | Description |
 |------|-------------|
-| `epdiy.WIDTH` | Display width in pixels (960) |
-| `epdiy.HEIGHT` | Display height in pixels (540) |
+| `epdiy.WIDTH` | Display width in pixels (board-dependent, e.g. 960 for ED047TC1) |
+| `epdiy.HEIGHT` | Display height in pixels (board-dependent, e.g. 540 for ED047TC1) |
 | `epdiy.MODE_DU` | Direct update mode (fast, 2-level) |
 | `epdiy.MODE_GC16` | 16-level grayscale mode (flashing) |
 | `epdiy.MODE_GL16` | 16-level grayscale mode (non-flashing, default) |
@@ -37,7 +37,7 @@ Constructor. Initialises the display driver. Only one instance may exist at a ti
 | `epd.deinit()` | Release the display hardware. The object must not be used afterwards. |
 | `epd.poweron()` | Enable the display panel power supply. Must be called before `update()` / `update_area()`. |
 | `epd.poweroff()` | Disable the display panel power supply. |
-| `epd.temperature()` | Return the ambient temperature (float, °C). Falls back to 25 °C when no sensor is fitted. |
+| `epd.temperature()` | Return the ambient temperature (float, °C). Returns 0.0 when no sensor is fitted. |
 
 ### Drawing (framebuffer)
 
@@ -172,6 +172,8 @@ epd.poweroff()
 | `epd.refresh([x, y, w, h])` | Force-redraw the framebuffer (or a sub-area) to the panel, managing power internally. Unlike `update()`, this unconditionally redraws every pixel in the area regardless of what changed. Always uses `MODE_GC16`. |
 
 ## Example
+
+> **Note:** The pixel coordinates below assume the default 960×540 display (ED047TC1). Adjust them for other boards using `epdiy.WIDTH` and `epdiy.HEIGHT`.
 
 ```python
 import time

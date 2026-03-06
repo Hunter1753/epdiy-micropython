@@ -4,7 +4,7 @@
 # This file is appended last to the build configuration, so it overrides
 # all board defaults. Run a full clean (fullclean.sh) after changing it.
 #
-# ─── Partition table (LILYGO_T5_47 and other 16 MiB boards) ────────────────
+# ─── Partition table (EPDIY_V7 and other 8 MiB ESP32-S3 boards) ─────────────
 #
 # The app partition holds the compiled firmware (including any fonts you add
 # with add_font.py). The remaining flash is available as a MicroPython
@@ -12,8 +12,32 @@
 #
 # Pick ONE layout and uncomment it:
 
+# More app space (3 MiB) — default; fits larger firmware builds; ~5 MiB for .py files
+# CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions-8MiB-large-app.csv"
+
+# More filesystem space (2 MiB app) — smaller firmware only; ~6 MiB for .py files
+# CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions-8MiB-large-fs.csv"
+
+# ─── Partition table (LILYGO_T5_47 and other 16 MiB boards) ─────────────────
+#
+# Pick ONE layout and uncomment it:
+
 # More app space (4 MiB) — fits many compiled-in fonts; ~12 MiB for .py files
 # CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions-16MiB-large-app.csv"
 
-# More filesystem space — fewer compiled fonts; ~14 MiB for .py files
+# More filesystem space (2 MiB app) — fewer compiled fonts; ~14 MiB for .py files
 # CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions-16MiB-large-fs.csv"
+
+# ─── Partition table (32 MiB boards) ─────────────────────────────────────────
+#
+# No 32 MiB partition table is shipped out of the box. To add one, create a
+# new file (e.g. partitions-32MiB-large-app.csv) in
+# micropython/ports/esp32/ following the same layout as the existing tables,
+# then reference it here and add a matching entry to the patch file
+# (patches/micropython/001-add-board-type.patch) so it survives a clean
+# submodule reset.  Also set the flash-size keys to match:
+#
+# CONFIG_ESPTOOLPY_FLASHSIZE_16MB=
+# CONFIG_ESPTOOLPY_FLASHSIZE_32MB=y
+# CONFIG_ESPTOOLPY_FLASHSIZE="32MB"
+# CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions-32MiB-large-app.csv"

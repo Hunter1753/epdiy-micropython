@@ -287,12 +287,16 @@ new file mode 100644
 index 000000000..383c58e8f
 --- /dev/null
 +++ b/ports/esp32/boards/EPDIY_V7/sdkconfig.board
-@@ -0,0 +1,5 @@
+@@ -0,0 +1,9 @@
 +# epdiy V7 specific sdkconfig overrides
 +
-+# Flash: QIO mode at 80 MHz
++# Flash: QIO mode at 80 MHz, 8 MB
 +CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
 +CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
++CONFIG_ESPTOOLPY_FLASHSIZE_4MB=
++CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
++CONFIG_ESPTOOLPY_FLASHSIZE="8MB"
++CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions-8MiB-large-app.csv"
 diff --git a/ports/esp32/boards/EPDIY_V7_103/manifest.py b/ports/esp32/boards/EPDIY_V7_103/manifest.py
 new file mode 100644
 index 000000000..832942f05
@@ -346,12 +350,16 @@ new file mode 100644
 index 000000000..335f3f9af
 --- /dev/null
 +++ b/ports/esp32/boards/EPDIY_V7_103/sdkconfig.board
-@@ -0,0 +1,5 @@
+@@ -0,0 +1,9 @@
 +# epdiy V7 (10.3") specific sdkconfig overrides
 +
-+# Flash: QIO mode at 80 MHz
++# Flash: QIO mode at 80 MHz, 8 MB
 +CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
 +CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
++CONFIG_ESPTOOLPY_FLASHSIZE_4MB=
++CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
++CONFIG_ESPTOOLPY_FLASHSIZE="8MB"
++CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions-8MiB-large-app.csv"
 diff --git a/ports/esp32/boards/EPDIY_V7_RAW/manifest.py b/ports/esp32/boards/EPDIY_V7_RAW/manifest.py
 new file mode 100644
 index 000000000..832942f05
@@ -405,12 +413,16 @@ new file mode 100644
 index 000000000..190fc19d8
 --- /dev/null
 +++ b/ports/esp32/boards/EPDIY_V7_RAW/sdkconfig.board
-@@ -0,0 +1,5 @@
+@@ -0,0 +1,9 @@
 +# epdiy V7 Raw specific sdkconfig overrides
 +
-+# Flash: QIO mode at 80 MHz
++# Flash: QIO mode at 80 MHz, 8 MB
 +CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
 +CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
++CONFIG_ESPTOOLPY_FLASHSIZE_4MB=
++CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
++CONFIG_ESPTOOLPY_FLASHSIZE="8MB"
++CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions-8MiB-large-app.csv"
 diff --git a/ports/esp32/boards/LILYGO_S3/manifest.py b/ports/esp32/boards/LILYGO_S3/manifest.py
 new file mode 100644
 index 000000000..832942f05
@@ -464,12 +476,16 @@ new file mode 100644
 index 000000000..f667781be
 --- /dev/null
 +++ b/ports/esp32/boards/LILYGO_S3/sdkconfig.board
-@@ -0,0 +1,5 @@
+@@ -0,0 +1,9 @@
 +# LilyGo T5 4.7 S3 specific sdkconfig overrides
 +
-+# Flash: QIO mode at 80 MHz
++# Flash: QIO mode at 80 MHz, 16 MB
 +CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
 +CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
++CONFIG_ESPTOOLPY_FLASHSIZE_4MB=
++CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
++CONFIG_ESPTOOLPY_FLASHSIZE="16MB"
++CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions-16MiB-large-fs.csv"
 diff --git a/ports/esp32/boards/LILYGO_T5_47/manifest.py b/ports/esp32/boards/LILYGO_T5_47/manifest.py
 new file mode 100644
 index 000000000..832942f05
@@ -573,3 +589,31 @@ index 000000000..f4f1a3005
 +phy_init, data, phy,     0xf000,   0x1000,
 +factory,  app,  factory, 0x10000,  0x200000,
 +vfs,      data, fat,     0x210000, 0xDF0000,
+diff --git a/ports/esp32/partitions-8MiB-large-app.csv b/ports/esp32/partitions-8MiB-large-app.csv
+new file mode 100644
+index 000000000..000000000
+--- /dev/null
++++ b/ports/esp32/partitions-8MiB-large-app.csv
+@@ -0,0 +1,8 @@
++# Partition table for 8 MiB flash — large app variant.
++# app: 3 MiB  |  vfs: ~5 MiB
++#
++# Name,   Type, SubType, Offset,   Size,     Flags
++nvs,      data, nvs,     0x9000,   0x6000,
++phy_init, data, phy,     0xf000,   0x1000,
++factory,  app,  factory, 0x10000,  0x300000,
++vfs,      data, fat,     0x310000, 0x4F0000,
+diff --git a/ports/esp32/partitions-8MiB-large-fs.csv b/ports/esp32/partitions-8MiB-large-fs.csv
+new file mode 100644
+index 000000000..000000000
+--- /dev/null
++++ b/ports/esp32/partitions-8MiB-large-fs.csv
+@@ -0,0 +1,8 @@
++# Partition table for 8 MiB flash — large filesystem variant.
++# app: 2 MiB  |  vfs: ~6 MiB
++#
++# Name,   Type, SubType, Offset,   Size,     Flags
++nvs,      data, nvs,     0x9000,   0x6000,
++phy_init, data, phy,     0xf000,   0x1000,
++factory,  app,  factory, 0x10000,  0x200000,
++vfs,      data, fat,     0x210000, 0x5F0000,
