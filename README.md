@@ -57,24 +57,33 @@ When the board type changes between builds, `build.sh` automatically runs `fullc
 
 The app partition holds the compiled firmware (including any fonts you add with `add_font.py`).
 The remaining flash is available as a MicroPython filesystem for `.py` scripts and data files.
-On boards with 16 MiB flash (e.g. `LILYGO_T5_47`) you can tune this tradeoff.
-
-Copy `user.sdkconfig.example` to `user.sdkconfig` and uncomment one line:
+You can tune this tradeoff by copying `user.sdkconfig.example` to `user.sdkconfig` and uncommenting one line:
 
 ```sh
 cp user.sdkconfig.example user.sdkconfig
 # then edit user.sdkconfig and uncomment your preferred layout
 ```
 
-| Setting in `user.sdkconfig`                                        | App    | Filesystem |
-|--------------------------------------------------------------------|--------|------------|
+**8 MiB boards** (e.g. `EPDIY_V7` and other ESP32-S3 boards):
+
+| Setting in `user.sdkconfig`                                               | App    | Filesystem |
+|---------------------------------------------------------------------------|--------|------------|
+| `CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions-8MiB-large-app.csv"`  | 3 MiB  | ~5 MiB     |
+| `CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions-8MiB-large-fs.csv"`   | 2 MiB  | ~6 MiB     |
+
+**16 MiB boards** (e.g. `LILYGO_T5_47`):
+
+| Setting in `user.sdkconfig`                                                       | App    | Filesystem |
+|-----------------------------------------------------------------------------------|--------|------------|
 | `CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions-16MiB-large-app.csv"` | 4 MiB  | ~12 MiB    |
-| `CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions-16MiB-large-fs.csv"`  | 1.9 MiB | ~14 MiB  |
+| `CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions-16MiB-large-fs.csv"`  | 2 MiB  | ~14 MiB    |
+
+**32 MiB boards:** No partition table is shipped out of the box. See the comments in `user.sdkconfig.example` for instructions on creating one.
 
 After changing `user.sdkconfig` run a full clean and rebuild:
 
 ```sh
-./fullclean.sh && ./build.sh LILYGO_T5_47
+./fullclean.sh && ./build.sh [BOARD]
 ```
 
 `user.sdkconfig` is gitignored. Without it the default partition layout is used unchanged.

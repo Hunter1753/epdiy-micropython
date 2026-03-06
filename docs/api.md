@@ -46,8 +46,10 @@ All drawing methods write to an in-memory framebuffer. Call `update()` or `updat
 | Method | Description |
 |--------|-------------|
 | `epd.clear()` | Full hardware clear (power is managed internally and turned off afterwards). |
+| `epd.clear_area(x, y, w, h [, cycles [, cycle_time]])` | Partial hardware flash-clear of a rectangle. Manages power internally. `cycles` defaults to 3; `cycle_time` is the pulse length in µs (default 50). |
 | `epd.fill(color)` | Fill the entire framebuffer with `color`. |
 | `epd.pixel(x, y, color)` | Set a single pixel. |
+| `epd.get_pixel(x, y)` | Read back the current color (0–15) of a pixel from the framebuffer. |
 | `epd.hline(x, y, w, color)` | Draw a horizontal line of width `w`. |
 | `epd.vline(x, y, h, color)` | Draw a vertical line of height `h`. |
 | `epd.line(x0, y0, x1, y1, color)` | Draw a line between two points. |
@@ -64,10 +66,13 @@ All drawing methods write to an in-memory framebuffer. Call `update()` or `updat
 | `epd.write_text(x, y, text, size [, font_name])` | Draw `text` at `(x, y)`. `font_name` defaults to `"FiraSans"`; pass a custom font name to use a user-added font. Raises `ValueError` if the name/size combination is not available. Uses the colors and alignment set by the methods below. |
 | `epd.set_text_color(fg [, bg])` | Set foreground color (and optionally background color) for `write_text`. Colors are 0–15. |
 | `epd.set_text_align(flags)` | Set text alignment / background drawing flags. Pass one or more `epdiy.ALIGN_*` / `epdiy.DRAW_BACKGROUND` constants combined with `\|`. |
-| `epd.reset_text_props()` | Reset all font properties to defaults (black foreground, no background, left-aligned). |
+| `epd.set_fallback_glyph(codepoint)` | Set the Unicode codepoint used as a substitute when a requested glyph is absent from the font. Pass `0` to disable (default). |
+| `epd.reset_text_props()` | Reset all font properties to defaults (black foreground, no background, left-aligned, no fallback glyph). |
 | `epd.draw_framebuf(buf, width, height, format, x, y)` | Blit a MicroPython framebuffer (or any buffer-protocol object) onto the display framebuffer at `(x, y)`. See below. |
 | `epd.set_rotation(rot)` | Set the display rotation. Pass one of the `epdiy.ROT_*` constants. Affects all subsequent drawing and font calls. |
 | `epd.get_rotation()` | Return the current rotation as an integer (one of the `epdiy.ROT_*` values). |
+| `epd.rotated_width()` | Display width after the current rotation is applied. Equal to `WIDTH` in landscape, `HEIGHT` in portrait. |
+| `epd.rotated_height()` | Display height after the current rotation is applied. Equal to `HEIGHT` in landscape, `WIDTH` in portrait. |
 
 ### Text measurement
 
@@ -78,6 +83,7 @@ These methods measure text without drawing anything, useful for layout calculati
 | `epd.get_string_rect(x, y, text, size [, margin=0 [, font_name]])` | `(x, y, w, h)` | Bounding rectangle of `text` when drawn at `(x, y)`. Handles `\n` newlines. `margin` is added to width and height. `font_name` defaults to `"FiraSans"`. |
 | `epd.get_text_bounds(x, y, text, size [, font_name])` | `(x1, y1, w, h)` | Tight bounding box of `text`. `x1`/`y1` may differ from the cursor position due to glyph offsets. Does not handle newlines. `font_name` defaults to `"FiraSans"`. |
 | `epd.font_metrics(size [, font_name])` | `(ascender, descender, advance_y)` | Vertical metrics of the font: pixels above/below the baseline and line spacing. `font_name` defaults to `"FiraSans"`. |
+| `epd.glyph_info(codepoint, size [, font_name])` | `(width, height, advance_x, left, top)` or `None` | Metrics of the glyph for the given Unicode codepoint. Returns `None` if the codepoint is not present in the font. `font_name` defaults to `"FiraSans"`. |
 | `epd.list_fonts()` | `[(name, size), ...]` | List all available fonts as `(font_name, size)` tuples — built-in and user-added. |
 
 ```python
@@ -169,6 +175,7 @@ epd.poweroff()
 |--------|-------------|
 | `epd.update([mode])` | Push the full framebuffer to the panel. `mode` defaults to `MODE_GL16`. Must be called between `poweron()` and `poweroff()`. |
 | `epd.update_area(x, y, w, h [, mode])` | Partial refresh of the given rectangle. `mode` defaults to `MODE_GL16`. Must be called between `poweron()` and `poweroff()`. |
+| `epd.push_pixels(x, y, w, h, time, color)` | Low-level voltage push directly to the panel, bypassing waveforms. `time` is the pulse duration in µs. `color`: `0` = darken, `1` = lighten, `2` = neutral. Must be called between `poweron()` and `poweroff()`. |
 | `epd.refresh([x, y, w, h])` | Force-redraw the framebuffer (or a sub-area) to the panel, managing power internally. Unlike `update()`, this unconditionally redraws every pixel in the area regardless of what changed. Always uses `MODE_GC16`. |
 
 ## Example

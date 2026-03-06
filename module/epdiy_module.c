@@ -140,6 +140,31 @@ static mp_obj_t epd_obj_clear(mp_obj_t self_in) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(epd_obj_clear_obj, epd_obj_clear);
 
+// ─── clear_area(x, y, w, h[, cycles[, cycle_time]]) ──────────────────────────
+// Partial hardware flash-clear of the given rectangle. Manages power internally.
+// cycles defaults to 3, cycle_time defaults to 50 (µs).
+static mp_obj_t epd_obj_clear_area(size_t n_args, const mp_obj_t *args) {
+    epd_obj_t *self = MP_OBJ_TO_PTR(args[0]);
+    EPD_CHECK_INIT(self);
+    EpdRect area = {
+        .x      = mp_obj_get_int(args[1]),
+        .y      = mp_obj_get_int(args[2]),
+        .width  = mp_obj_get_int(args[3]),
+        .height = mp_obj_get_int(args[4]),
+    };
+    epd_poweron();
+    if (n_args > 5) {
+        int cycles     = mp_obj_get_int(args[5]);
+        int cycle_time = (n_args > 6) ? mp_obj_get_int(args[6]) : 50;
+        epd_clear_area_cycles(area, cycles, cycle_time);
+    } else {
+        epd_clear_area(area);
+    }
+    epd_poweroff();
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(epd_obj_clear_area_obj, 5, 7, epd_obj_clear_area);
+
 // ─── fill(color) ──────────────────────────────────────────────────────────────
 static mp_obj_t epd_obj_fill(mp_obj_t self_in, mp_obj_t color_in) {
     epd_obj_t *self = MP_OBJ_TO_PTR(self_in);
@@ -163,6 +188,20 @@ static mp_obj_t epd_obj_pixel(size_t n_args, const mp_obj_t *args) {
     return mp_const_none;
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(epd_obj_pixel_obj, 4, 4, epd_obj_pixel);
+
+// ─── get_pixel(x, y) → color (0-15) ──────────────────────────────────────────
+// Read back the color of a pixel from the framebuffer.
+static mp_obj_t epd_obj_get_pixel(mp_obj_t self_in, mp_obj_t x_in, mp_obj_t y_in) {
+    epd_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    EPD_CHECK_INIT(self);
+    int x = mp_obj_get_int(x_in);
+    int y = mp_obj_get_int(y_in);
+    uint8_t *fb = epd_hl_get_framebuffer(&self->hl);
+    // epd_get_pixel returns the color byte in epd_draw_pixel format (upper nibble),
+    // shift right by 4 to get our 0-15 scale.
+    return mp_obj_new_int(epd_get_pixel(x, y, EPDIY_WIDTH, EPDIY_HEIGHT, fb) >> 4);
+}
+static MP_DEFINE_CONST_FUN_OBJ_3(epd_obj_get_pixel_obj, epd_obj_get_pixel);
 
 // ─── hline(x, y, w, color) ────────────────────────────────────────────────────
 static mp_obj_t epd_obj_hline(size_t n_args, const mp_obj_t *args) {
@@ -549,6 +588,17 @@ static mp_obj_t epd_obj_set_text_align(mp_obj_t self_in, mp_obj_t flags_in) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_2(epd_obj_set_text_align_obj, epd_obj_set_text_align);
 
+// ─── set_fallback_glyph(codepoint) ───────────────────────────────────────────
+// Set the Unicode codepoint used as a fallback for glyphs missing from the font.
+// Pass 0 to disable fallback (the default).
+static mp_obj_t epd_obj_set_fallback_glyph(mp_obj_t self_in, mp_obj_t cp_in) {
+    epd_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    EPD_CHECK_INIT(self);
+    self->font_props.fallback_glyph = (uint32_t)mp_obj_get_int(cp_in);
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(epd_obj_set_fallback_glyph_obj, epd_obj_set_fallback_glyph);
+
 // ─── Font helpers ─────────────────────────────────────────────────────────────
 static const EpdFont *font_from_name_size(const char *name, int size) {
     if (strcmp(name, "FiraSans") == 0) {
@@ -694,6 +744,34 @@ static mp_obj_t epd_obj_font_metrics(size_t n_args, const mp_obj_t *args) {
     return mp_obj_new_tuple(3, items);
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(epd_obj_font_metrics_obj, 2, 3, epd_obj_font_metrics);
+
+// ─── glyph_info(codepoint, size[, font_name]) → (w, h, advance_x, left, top) or None ──
+// Return the metrics of the glyph for `codepoint` in the given font/size, or
+// None if the codepoint is not present in the font.
+static mp_obj_t epd_obj_glyph_info(size_t n_args, const mp_obj_t *args) {
+    epd_obj_t *self = MP_OBJ_TO_PTR(args[0]);
+    EPD_CHECK_INIT(self);
+    uint32_t codepoint = (uint32_t)mp_obj_get_int(args[1]);
+    int size = mp_obj_get_int(args[2]);
+    const char *font_name = (n_args > 3) ? mp_obj_str_get_str(args[3]) : "FiraSans";
+    const EpdFont *font = font_from_name_size(font_name, size);
+    if (!font) {
+        mp_raise_ValueError(MP_ERROR_TEXT("unsupported font name or size"));
+    }
+    const EpdGlyph *g = epd_get_glyph(font, codepoint);
+    if (!g) {
+        return mp_const_none;
+    }
+    mp_obj_t items[5] = {
+        mp_obj_new_int(g->width),
+        mp_obj_new_int(g->height),
+        mp_obj_new_int(g->advance_x),
+        mp_obj_new_int(g->left),
+        mp_obj_new_int(g->top),
+    };
+    return mp_obj_new_tuple(5, items);
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(epd_obj_glyph_info_obj, 3, 4, epd_obj_glyph_info);
 
 // ─── draw_framebuf(buf, width, height, format, x, y) ─────────────────────────
 // Blit a MicroPython-compatible framebuf (or any buffer-protocol object) onto
@@ -877,6 +955,23 @@ static mp_obj_t epd_obj_get_rotation(mp_obj_t self_in) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(epd_obj_get_rotation_obj, epd_obj_get_rotation);
 
+// ─── rotated_width() / rotated_height() ──────────────────────────────────────
+// Return the display dimensions after applying the current rotation.
+// These swap relative to WIDTH/HEIGHT when in portrait mode.
+static mp_obj_t epd_obj_rotated_width(mp_obj_t self_in) {
+    epd_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    EPD_CHECK_INIT(self);
+    return mp_obj_new_int(epd_rotated_display_width());
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(epd_obj_rotated_width_obj, epd_obj_rotated_width);
+
+static mp_obj_t epd_obj_rotated_height(mp_obj_t self_in) {
+    epd_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    EPD_CHECK_INIT(self);
+    return mp_obj_new_int(epd_rotated_display_height());
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(epd_obj_rotated_height_obj, epd_obj_rotated_height);
+
 // ─── update_area(x, y, w, h[, mode]) ─────────────────────────────────────────
 // Partial refresh of the given rectangle.
 // mode defaults to MODE_GL16. Must be called between poweron() and poweroff().
@@ -899,6 +994,27 @@ static mp_obj_t epd_obj_update_area(size_t n_args, const mp_obj_t *args) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(epd_obj_update_area_obj, 5, 6, epd_obj_update_area);
 
+// ─── push_pixels(x, y, w, h, time, color) ────────────────────────────────────
+// Low-level voltage push directly to the display, bypassing waveforms.
+// time: duration in microseconds per pulse.
+// color: 0 = darken, 1 = lighten, 2 = neutral.
+// Must be called between poweron() and poweroff().
+static mp_obj_t epd_obj_push_pixels(size_t n_args, const mp_obj_t *args) {
+    epd_obj_t *self = MP_OBJ_TO_PTR(args[0]);
+    EPD_CHECK_INIT(self);
+    EpdRect area = {
+        .x      = mp_obj_get_int(args[1]),
+        .y      = mp_obj_get_int(args[2]),
+        .width  = mp_obj_get_int(args[3]),
+        .height = mp_obj_get_int(args[4]),
+    };
+    short time  = (short)mp_obj_get_int(args[5]);
+    int   color = mp_obj_get_int(args[6]);
+    epd_push_pixels(area, time, color);
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(epd_obj_push_pixels_obj, 7, 7, epd_obj_push_pixels);
+
 // ─── EPD type definition ──────────────────────────────────────────────────────
 static const mp_rom_map_elem_t epd_obj_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_deinit),      MP_ROM_PTR(&epd_obj_deinit_obj) },
@@ -906,8 +1022,10 @@ static const mp_rom_map_elem_t epd_obj_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_poweroff),    MP_ROM_PTR(&epd_obj_poweroff_obj) },
     { MP_ROM_QSTR(MP_QSTR_temperature), MP_ROM_PTR(&epd_obj_temperature_obj) },
     { MP_ROM_QSTR(MP_QSTR_clear),       MP_ROM_PTR(&epd_obj_clear_obj) },
+    { MP_ROM_QSTR(MP_QSTR_clear_area),  MP_ROM_PTR(&epd_obj_clear_area_obj) },
     { MP_ROM_QSTR(MP_QSTR_fill),        MP_ROM_PTR(&epd_obj_fill_obj) },
     { MP_ROM_QSTR(MP_QSTR_pixel),       MP_ROM_PTR(&epd_obj_pixel_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_pixel),   MP_ROM_PTR(&epd_obj_get_pixel_obj) },
     { MP_ROM_QSTR(MP_QSTR_hline),       MP_ROM_PTR(&epd_obj_hline_obj) },
     { MP_ROM_QSTR(MP_QSTR_vline),       MP_ROM_PTR(&epd_obj_vline_obj) },
     { MP_ROM_QSTR(MP_QSTR_line),        MP_ROM_PTR(&epd_obj_line_obj) },
@@ -921,20 +1039,25 @@ static const mp_rom_map_elem_t epd_obj_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_fill_round_rect),  MP_ROM_PTR(&epd_obj_fill_round_rect_obj) },
     { MP_ROM_QSTR(MP_QSTR_arc),              MP_ROM_PTR(&epd_obj_arc_obj) },
     { MP_ROM_QSTR(MP_QSTR_fill_arc),         MP_ROM_PTR(&epd_obj_fill_arc_obj) },
-    { MP_ROM_QSTR(MP_QSTR_set_text_color),   MP_ROM_PTR(&epd_obj_set_text_color_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_text_color),    MP_ROM_PTR(&epd_obj_set_text_color_obj) },
     { MP_ROM_QSTR(MP_QSTR_set_text_align),   MP_ROM_PTR(&epd_obj_set_text_align_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_fallback_glyph), MP_ROM_PTR(&epd_obj_set_fallback_glyph_obj) },
     { MP_ROM_QSTR(MP_QSTR_reset_text_props), MP_ROM_PTR(&epd_obj_reset_text_props_obj) },
     { MP_ROM_QSTR(MP_QSTR_write_text),        MP_ROM_PTR(&epd_obj_write_text_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_string_rect),  MP_ROM_PTR(&epd_obj_get_string_rect_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_text_bounds),  MP_ROM_PTR(&epd_obj_get_text_bounds_obj) },
     { MP_ROM_QSTR(MP_QSTR_font_metrics),     MP_ROM_PTR(&epd_obj_font_metrics_obj) },
+    { MP_ROM_QSTR(MP_QSTR_glyph_info),       MP_ROM_PTR(&epd_obj_glyph_info_obj) },
     { MP_ROM_QSTR(MP_QSTR_list_fonts),       MP_ROM_PTR(&epd_obj_list_fonts_obj) },
     { MP_ROM_QSTR(MP_QSTR_draw_framebuf), MP_ROM_PTR(&epd_obj_draw_framebuf_obj) },
-    { MP_ROM_QSTR(MP_QSTR_set_rotation), MP_ROM_PTR(&epd_obj_set_rotation_obj) },
-    { MP_ROM_QSTR(MP_QSTR_get_rotation), MP_ROM_PTR(&epd_obj_get_rotation_obj) },
-    { MP_ROM_QSTR(MP_QSTR_update),      MP_ROM_PTR(&epd_obj_update_obj) },
-    { MP_ROM_QSTR(MP_QSTR_update_area), MP_ROM_PTR(&epd_obj_update_area_obj) },
-    { MP_ROM_QSTR(MP_QSTR_refresh),     MP_ROM_PTR(&epd_obj_refresh_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_rotation),    MP_ROM_PTR(&epd_obj_set_rotation_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_rotation),   MP_ROM_PTR(&epd_obj_get_rotation_obj) },
+    { MP_ROM_QSTR(MP_QSTR_rotated_width),  MP_ROM_PTR(&epd_obj_rotated_width_obj) },
+    { MP_ROM_QSTR(MP_QSTR_rotated_height), MP_ROM_PTR(&epd_obj_rotated_height_obj) },
+    { MP_ROM_QSTR(MP_QSTR_update),         MP_ROM_PTR(&epd_obj_update_obj) },
+    { MP_ROM_QSTR(MP_QSTR_update_area),    MP_ROM_PTR(&epd_obj_update_area_obj) },
+    { MP_ROM_QSTR(MP_QSTR_push_pixels),    MP_ROM_PTR(&epd_obj_push_pixels_obj) },
+    { MP_ROM_QSTR(MP_QSTR_refresh),        MP_ROM_PTR(&epd_obj_refresh_obj) },
 };
 static MP_DEFINE_CONST_DICT(epd_obj_locals_dict, epd_obj_locals_dict_table);
 
