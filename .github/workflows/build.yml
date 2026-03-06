@@ -84,31 +84,20 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    strategy:
-      matrix:
-        board:
-          - LILYGO_T5_47
-          - EPDIY_V2_V3
-          - EPDIY_V4
-          - EPDIY_V5
-          - EPDIY_V6
-          - EPDIY_V7
-          - EPDIY_V7_103
-          - EPDIY_V7_RAW
-          - LILYGO_S3
 
     steps:
-      - name: Download firmware artifacts (${{ matrix.board }})
+      - name: Download all firmware artifacts
         uses: actions/download-artifact@v4
         with:
-          name: firmware-${{ matrix.board }}-${{ github.sha }}
-          path: build-artifacts/${{ matrix.board }}/
+          pattern: firmware-*-${{ github.sha }}
+          path: build-artifacts/
+          merge-multiple: false
 
-      - name: Create GitHub Release (${{ matrix.board }})
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            build-artifacts/${{ matrix.board }}/micropython.bin
-            build-artifacts/${{ matrix.board }}/bootloader/bootloader.bin
-            build-artifacts/${{ matrix.board }}/partition_table/partition-table.bin
+            build-artifacts/**/micropython.bin
+            build-artifacts/**/bootloader.bin
+            build-artifacts/**/partition-table.bin
           generate_release_notes: true
