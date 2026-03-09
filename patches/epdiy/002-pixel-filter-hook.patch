@@ -1,0 +1,42 @@
+diff --git a/src/epdiy.c b/src/epdiy.c
+index 9735df1..babea32 100644
+--- a/src/epdiy.c
++++ b/src/epdiy.c
+@@ -8,6 +8,7 @@
+ #include <esp_heap_caps.h>
+ #include <esp_log.h>
+ #include <esp_types.h>
++#include <stddef.h>
+ 
+ // Simple x and y coordinate
+ typedef struct {
+@@ -73,7 +74,13 @@ Coord_xy _rotate(uint16_t x, uint16_t y) {
+     return coord;
+ }
+ 
++// Optional pixel filter for clipping. NULL = no filtering.
++// Called with logical (pre-rotation) coordinates.
++// Return 0 to skip the pixel, non-zero to draw it.
++int (*epd_pixel_filter)(int x, int y) = NULL;
++
+ void epd_draw_pixel(int x, int y, uint8_t color, uint8_t* framebuffer) {
++    if (epd_pixel_filter && !epd_pixel_filter(x, y)) return;
+     // Check rotation and move pixel around if necessary
+     Coord_xy coord = _rotate(x, y);
+     x = coord.x;
+diff --git a/src/epdiy.h b/src/epdiy.h
+index 9f8ffa5..b27a4ca 100644
+--- a/src/epdiy.h
++++ b/src/epdiy.h
+@@ -303,6 +303,11 @@ void epd_copy_to_framebuffer(EpdRect image_area, const uint8_t* image_data, uint
+  */
+ void epd_draw_pixel(int x, int y, uint8_t color, uint8_t* framebuffer);
+ 
++/** Optional pixel filter for clipping. NULL = no filtering (default).
++ *  Called with logical (pre-rotation) coordinates before each pixel write.
++ *  Return 0 to skip the pixel, non-zero to draw it. */
++extern int (*epd_pixel_filter)(int x, int y);
++
+ /**
+  * Draw a horizontal line to a given framebuffer.
+  *

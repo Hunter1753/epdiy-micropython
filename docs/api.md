@@ -23,6 +23,8 @@ Colors are expressed as integers 0–15 (4-bit grayscale: 0 = black, 15 = white)
 | `epdiy.ROT_PORTRAIT` | Portrait orientation (540×960) |
 | `epdiy.ROT_INVERTED_LANDSCAPE` | Landscape, rotated 180° |
 | `epdiy.ROT_INVERTED_PORTRAIT` | Portrait, rotated 180° |
+| `epdiy.CLIP_INSIDE` | Clip mode: allow drawing **inside** the clip region (0) |
+| `epdiy.CLIP_OUTSIDE` | Clip mode: allow drawing **outside** the clip region (1) |
 
 ## `epdiy.EPD()`
 
@@ -73,6 +75,9 @@ All drawing methods write to an in-memory framebuffer. Call `update()` or `updat
 | `epd.get_rotation()` | Return the current rotation as an integer (one of the `epdiy.ROT_*` values). |
 | `epd.rotated_width()` | Display width after the current rotation is applied. Equal to `WIDTH` in landscape, `HEIGHT` in portrait. |
 | `epd.rotated_height()` | Display height after the current rotation is applied. Equal to `HEIGHT` in landscape, `WIDTH` in portrait. |
+| `epd.set_clip_rect(x, y, w, h, mode)` | Set a rectangular clipping mask. `mode` is `epdiy.CLIP_INSIDE` or `epdiy.CLIP_OUTSIDE`. |
+| `epd.set_clip_circle(cx, cy, r, mode)` | Set a circular clipping mask centred at `(cx, cy)` with radius `r`. `mode` is `epdiy.CLIP_INSIDE` or `epdiy.CLIP_OUTSIDE`. |
+| `epd.clear_clip()` | Remove the active clipping mask. Drawing is unrestricted afterwards. |
 
 ### Text measurement
 
@@ -130,6 +135,45 @@ epd.fill_arc(500, 270, 120, 0, 180, 0)
 epd.poweron()
 epd.update()
 epd.poweroff()
+```
+
+### Clipping masks
+
+A clipping mask restricts all subsequent drawing operations to a permitted region. Only one mask is active at a time; setting a new one replaces the previous one. Call `clear_clip()` to remove it.
+
+**`epd.set_clip_rect(x, y, w, h, mode)`** — rectangular region.
+
+**`epd.set_clip_circle(cx, cy, r, mode)`** — circular region centred at `(cx, cy)` with radius `r`.
+
+| Parameter | Description |
+|-----------|-------------|
+| `mode` | `epdiy.CLIP_INSIDE` — only pixels **inside** the region are drawn |
+|        | `epdiy.CLIP_OUTSIDE` — only pixels **outside** the region are drawn |
+
+The clip mask applies to **all** drawing operations including `write_text`, `draw_framebuf`, and every shape primitive.
+
+```python
+import epdiy
+
+epd = epdiy.EPD()
+epd.clear()
+epd.fill(15)  # white background
+
+# Draw inside a circle only
+epd.set_clip_circle(480, 270, 200, epdiy.CLIP_INSIDE)
+epd.fill_rect(0, 0, epdiy.WIDTH, epdiy.HEIGHT, 0)   # black, clipped to circle
+epd.write_text(600, 260, "clipped", 20)              # text also clipped
+epd.clear_clip()
+
+# Draw a frame by blacking out only outside a rectangle
+epd.set_clip_rect(100, 100, 760, 340, epdiy.CLIP_OUTSIDE)
+epd.fill(0)   # black border around the rect
+epd.clear_clip()
+
+epd.poweron()
+epd.update(epdiy.MODE_GC16)
+epd.poweroff()
+epd.deinit()
 ```
 
 ### `epd.draw_framebuf(buf, width, height, format, x, y)`

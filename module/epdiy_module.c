@@ -46,6 +46,40 @@ static const FontEntry user_font_table[] = {{NULL, 0, NULL}};
 // Only one EPD instance may be live at a time.
 static bool epd_module_in_use = false;
 
+// ─── Clipping mask ────────────────────────────────────────────────────────────
+typedef enum { CLIP_NONE = 0, CLIP_RECT, CLIP_CIRCLE } EpdClipType;
+typedef enum { CLIP_INSIDE = 0, CLIP_OUTSIDE = 1 }     EpdClipMode;
+
+typedef struct {
+    EpdClipType type;
+    EpdClipMode mode;
+    union {
+        struct { int x, y, w, h; } rect;
+        struct { int cx, cy, r;  } circle;
+    };
+} EpdClipMask;
+
+// Singleton clip state — valid because only one EPD may exist at a time.
+static EpdClipMask s_active_clip;  // zero-init = CLIP_NONE
+
+static inline bool clip_allows(const EpdClipMask *c, int x, int y) {
+    if (c->type == CLIP_NONE) return true;
+    bool inside;
+    if (c->type == CLIP_RECT) {
+        inside = (x >= c->rect.x && x < c->rect.x + c->rect.w &&
+                  y >= c->rect.y && y < c->rect.y + c->rect.h);
+    } else {
+        int dx = x - c->circle.cx, dy = y - c->circle.cy;
+        inside = (dx * dx + dy * dy <= c->circle.r * c->circle.r);
+    }
+    return (c->mode == CLIP_INSIDE) ? inside : !inside;
+}
+
+// Installed into epd_pixel_filter when a clip mask is active.
+static int epd_clip_callback(int x, int y) {
+    return clip_allows(&s_active_clip, x, y) ? 1 : 0;
+}
+
 // ─── EPD object type ──────────────────────────────────────────────────────────
 typedef struct _epd_obj_t {
     mp_obj_base_t base;
@@ -99,6 +133,8 @@ static mp_obj_t epd_obj_deinit(mp_obj_t self_in) {
     epd_deinit();
     self->initialized = false;
     epd_module_in_use = false;
+    s_active_clip.type = CLIP_NONE;
+    epd_pixel_filter = NULL;
     return mp_const_none;
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(epd_obj_deinit_obj, epd_obj_deinit);
@@ -552,6 +588,56 @@ static mp_obj_t epd_obj_fill_round_rect(size_t n_args, const mp_obj_t *args) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(epd_obj_fill_round_rect_obj, 7, 7, epd_obj_fill_round_rect);
 
+// ─── set_clip_rect(x, y, w, h, mode) ─────────────────────────────────────────
+// Set a rectangular clipping mask. mode: 0 = CLIP_INSIDE, 1 = CLIP_OUTSIDE.
+static mp_obj_t epd_obj_set_clip_rect(size_t n_args, const mp_obj_t *args) {
+    epd_obj_t *self = MP_OBJ_TO_PTR(args[0]);
+    EPD_CHECK_INIT(self);
+    int mode = mp_obj_get_int(args[5]);
+    if (mode != 0 && mode != 1) {
+        mp_raise_ValueError(MP_ERROR_TEXT("mode must be 0 (CLIP_INSIDE) or 1 (CLIP_OUTSIDE)"));
+    }
+    s_active_clip.type   = CLIP_RECT;
+    s_active_clip.mode   = (EpdClipMode)mode;
+    s_active_clip.rect.x = mp_obj_get_int(args[1]);
+    s_active_clip.rect.y = mp_obj_get_int(args[2]);
+    s_active_clip.rect.w = mp_obj_get_int(args[3]);
+    s_active_clip.rect.h = mp_obj_get_int(args[4]);
+    epd_pixel_filter = epd_clip_callback;
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(epd_obj_set_clip_rect_obj, 6, 6, epd_obj_set_clip_rect);
+
+// ─── set_clip_circle(cx, cy, r, mode) ────────────────────────────────────────
+// Set a circular clipping mask. mode: 0 = CLIP_INSIDE, 1 = CLIP_OUTSIDE.
+static mp_obj_t epd_obj_set_clip_circle(size_t n_args, const mp_obj_t *args) {
+    epd_obj_t *self = MP_OBJ_TO_PTR(args[0]);
+    EPD_CHECK_INIT(self);
+    int mode = mp_obj_get_int(args[4]);
+    if (mode != 0 && mode != 1) {
+        mp_raise_ValueError(MP_ERROR_TEXT("mode must be 0 (CLIP_INSIDE) or 1 (CLIP_OUTSIDE)"));
+    }
+    s_active_clip.type      = CLIP_CIRCLE;
+    s_active_clip.mode      = (EpdClipMode)mode;
+    s_active_clip.circle.cx = mp_obj_get_int(args[1]);
+    s_active_clip.circle.cy = mp_obj_get_int(args[2]);
+    s_active_clip.circle.r  = mp_obj_get_int(args[3]);
+    epd_pixel_filter = epd_clip_callback;
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(epd_obj_set_clip_circle_obj, 5, 5, epd_obj_set_clip_circle);
+
+// ─── clear_clip() ─────────────────────────────────────────────────────────────
+// Remove the active clipping mask.
+static mp_obj_t epd_obj_clear_clip(mp_obj_t self_in) {
+    epd_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    EPD_CHECK_INIT(self);
+    s_active_clip.type = CLIP_NONE;
+    epd_pixel_filter = NULL;
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(epd_obj_clear_clip_obj, epd_obj_clear_clip);
+
 // ─── set_text_color(fg[, bg]) ─────────────────────────────────────────────────
 // Set the foreground (and optionally background) color for write_text.
 // Colors are 0-15. bg defaults to 15 (white) when not given.
@@ -867,6 +953,9 @@ static mp_obj_t epd_obj_draw_framebuf(size_t n_args, const mp_obj_t *args) {
             // epdiy layout (verified from epd_draw_pixel / epd_get_pixel source):
             //   even x → LOW  nibble (bits 3:0)
             //   odd  x → HIGH nibble (bits 7:4)
+            if (!clip_allows(&s_active_clip, px, py)) {
+                continue;
+            }
             int epd_byte = (py * EPDIY_WIDTH + px) / 2;
             if (px & 1) {  // odd → HIGH nibble
                 fb[epd_byte] = (fb[epd_byte] & 0x0F) | (uint8_t)(gray << 4);
@@ -1039,6 +1128,9 @@ static const mp_rom_map_elem_t epd_obj_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_fill_round_rect),  MP_ROM_PTR(&epd_obj_fill_round_rect_obj) },
     { MP_ROM_QSTR(MP_QSTR_arc),              MP_ROM_PTR(&epd_obj_arc_obj) },
     { MP_ROM_QSTR(MP_QSTR_fill_arc),         MP_ROM_PTR(&epd_obj_fill_arc_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_clip_rect),     MP_ROM_PTR(&epd_obj_set_clip_rect_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_clip_circle),  MP_ROM_PTR(&epd_obj_set_clip_circle_obj) },
+    { MP_ROM_QSTR(MP_QSTR_clear_clip),       MP_ROM_PTR(&epd_obj_clear_clip_obj) },
     { MP_ROM_QSTR(MP_QSTR_set_text_color),    MP_ROM_PTR(&epd_obj_set_text_color_obj) },
     { MP_ROM_QSTR(MP_QSTR_set_text_align),   MP_ROM_PTR(&epd_obj_set_text_align_obj) },
     { MP_ROM_QSTR(MP_QSTR_set_fallback_glyph), MP_ROM_PTR(&epd_obj_set_fallback_glyph_obj) },
@@ -1081,6 +1173,9 @@ static const mp_rom_map_elem_t epdiy_module_globals_table[] = {
     // Display geometry constants (set at compile time by mpconfigboard.cmake)
     { MP_ROM_QSTR(MP_QSTR_WIDTH),            MP_ROM_INT(EPDIY_WIDTH) },
     { MP_ROM_QSTR(MP_QSTR_HEIGHT),           MP_ROM_INT(EPDIY_HEIGHT) },
+    // Clip mode constants for set_clip_rect() / set_clip_circle()
+    { MP_ROM_QSTR(MP_QSTR_CLIP_INSIDE),      MP_ROM_INT(0) },
+    { MP_ROM_QSTR(MP_QSTR_CLIP_OUTSIDE),     MP_ROM_INT(1) },
     // Font flags for set_text_align()
     { MP_ROM_QSTR(MP_QSTR_DRAW_BACKGROUND),  MP_ROM_INT(EPD_DRAW_BACKGROUND) },
     { MP_ROM_QSTR(MP_QSTR_ALIGN_LEFT),       MP_ROM_INT(EPD_DRAW_ALIGN_LEFT) },
