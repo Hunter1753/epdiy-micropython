@@ -96,6 +96,9 @@ The firmware ships with **FiraSans** at sizes 12 and 20. Additional TTF/OTF font
 
 Full constants, instance methods, text measurement utilities, and a complete usage example are in [docs/api.md](docs/api.md).
 
+# Methodology and AI Assistance
+This program was written by hand. Large Language Models (specifically Claude Sonnet 4.6) were used during the ideation phase to provide example code snippets for micropython modules. All AI-generated suggestions were reviewed, modified, and implemented by the author.
+
 # License
 
 The code in this repository is licensed under the LGPL-3.0 License - see the LICENSE file for details.
