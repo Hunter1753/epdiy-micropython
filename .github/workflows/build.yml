@@ -35,7 +35,7 @@ jobs:
           bash prepare.sh
 
       - name: Compress workspace into a single tarball
-        run: tar -czf workspace.tar.gz .
+        run: tar --exclude=workspace.tar.gz -czf workspace.tar.gz .
 
       - name: Upload prepared workspace
         uses: actions/upload-artifact@v4
