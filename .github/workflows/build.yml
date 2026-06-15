@@ -35,13 +35,13 @@ jobs:
           bash prepare.sh
 
       - name: Compress workspace into a single tarball
-        run: tar -czf ../workspace.tar.gz .
+        run: tar -czf /tmp/workspace.tar.gz .
 
       - name: Upload prepared workspace
         uses: actions/upload-artifact@v4
         with:
           name: prepared-workspace-${{ github.sha }}
-          path: ../workspace.tar.gz
+          path: /tmp/workspace.tar.gz
           retention-days: 1 # We only need this temporarily for the build job
 
   build:
@@ -81,7 +81,7 @@ jobs:
           bash build.sh ${{ matrix.board }}
 
       - name: Upload firmware artifacts (${{ matrix.board }})
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: firmware-${{ matrix.board }}-${{ github.sha }}
           path: |
